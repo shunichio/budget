@@ -7,17 +7,15 @@ import crypto from "node:crypto";
 import { db, getSetting, setSetting, nowIso, DATA_DIR, getTimezone, ymd } from "./db.mjs";
 import * as s3Api from "./s3.mjs";
 
-export const BACKUP_DIR_NAME = "backups"; // 位于 DATA_DIR 下，随卷持久化
-export const KEEP_VERSIONS = 7;
-export const BACKUP_FILE_RE = /^budget-\d{4}-\d{2}-\d{2}-\d{6}(?:-[0-9a-z]{4})?\.sql\.gz$/;
+export const BACKUP_DIR_NAME = 'backups' // 位于 DATA_DIR 下，随卷持久化
+export const KEEP_VERSIONS = 7
+export const BACKUP_FILE_RE = /^budget-\d{4}-\d{2}-\d{2}-\d{6}(?:-[0-9a-z]{4})?\.sql\.gz$/
 
-const pad2 = (n) => String(n).padStart(2, "0");
+const pad2 = n => String(n).padStart(2, '0')
 
 /** budget-YYYY-MM-DD-HHmmss.sql.gz */
 export function backupFileName(d) {
-  return `budget-${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(
-    d.getMinutes()
-  )}${pad2(d.getSeconds())}.sql.gz`;
+  return `budget-${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}.sql.gz`
 }
 
 /**
@@ -26,21 +24,21 @@ export function backupFileName(d) {
  * 同秒重复备份（如手动紧跟定时触发）时追加短随机后缀，避免静默覆盖。
  */
 export async function createBackupFile({ dir, now = new Date(), database = db } = {}) {
-  await fs.promises.mkdir(dir, { recursive: true });
-  const tmp = path.join(dir, `.tmp-backup-${process.pid}-${Date.now()}.sqlite`);
+  await fs.promises.mkdir(dir, { recursive: true })
+  const tmp = path.join(dir, `.tmp-backup-${process.pid}-${Date.now()}.sqlite`)
   try {
-    await database.backup(tmp);
-    const gz = zlib.gzipSync(fs.readFileSync(tmp));
-    let fileName = backupFileName(now);
+    await database.backup(tmp)
+    const gz = zlib.gzipSync(fs.readFileSync(tmp))
+    let fileName = backupFileName(now)
     while (fs.existsSync(path.join(dir, fileName))) {
-      fileName = backupFileName(now).replace(/\.sql\.gz$/, `-${crypto.randomBytes(2).toString("hex")}.sql.gz`);
+      fileName = backupFileName(now).replace(/\.sql\.gz$/, `-${crypto.randomBytes(2).toString('hex')}.sql.gz`)
     }
-    const filePath = path.join(dir, fileName);
-    fs.writeFileSync(filePath, gz);
-    return { filePath, fileName, bytes: gz.byteLength };
+    const filePath = path.join(dir, fileName)
+    fs.writeFileSync(filePath, gz)
+    return { filePath, fileName, bytes: gz.byteLength }
   } finally {
     try {
-      fs.unlinkSync(tmp);
+      fs.unlinkSync(tmp)
     } catch {}
   }
 }
@@ -50,68 +48,68 @@ export async function createBackupFile({ dir, now = new Date(), database = db } 
  * 返回被删除的路径列表。
  */
 export function pruneLocalBackups(dir, { keep = KEEP_VERSIONS, unlink = fs.unlinkSync, readdir = fs.readdirSync, stat = fs.statSync } = {}) {
-  let files = [];
+  let files = []
   try {
-    files = readdir(dir);
+    files = readdir(dir)
   } catch {
-    return []; // 目录不存在等
+    return [] // 目录不存在等
   }
   const items = files
-    .filter((f) => BACKUP_FILE_RE.test(f))
-    .map((f) => {
+    .filter(f => BACKUP_FILE_RE.test(f))
+    .map(f => {
       try {
-        return { path: path.join(dir, f), mtimeMs: stat(path.join(dir, f)).mtimeMs };
+        return { path: path.join(dir, f), mtimeMs: stat(path.join(dir, f)).mtimeMs }
       } catch {
-        return null;
+        return null
       }
     })
     .filter(Boolean)
-    .sort((a, b) => b.mtimeMs - a.mtimeMs);
+    .sort((a, b) => b.mtimeMs - a.mtimeMs)
   return items
     .slice(keep)
-    .map((it) => {
+    .map(it => {
       try {
-        unlink(it.path);
-        return it.path;
+        unlink(it.path)
+        return it.path
       } catch {
-        return null;
+        return null
       }
     })
-    .filter(Boolean);
+    .filter(Boolean)
 }
 
 /** 从 settings 聚合 R2 连接配置；ready 表示四要素齐全、可以上传 */
 export function s3ConfigFromSettings(get = getSetting) {
   const cfg = {
-    endpoint: (get("backup_r2_endpoint", "") || "").trim().replace(/\/+$/, ""),
-    bucket: (get("backup_r2_bucket", "") || "").trim(),
-    prefix: (get("backup_r2_prefix", "xiaowen-ynab-backup") || "").replace(/^\/+|\/+$/g, ""),
-    accessKeyId: (get("backup_r2_access_key_id", "") || "").trim(),
-    secretAccessKey: get("backup_r2_secret_key", "") || "",
-  };
-  cfg.ready = !!(cfg.endpoint && cfg.bucket && cfg.accessKeyId && cfg.secretAccessKey);
-  return cfg;
+    endpoint: (get('backup_r2_endpoint', '') || '').trim().replace(/\/+$/, ''),
+    bucket: (get('backup_r2_bucket', '') || '').trim(),
+    prefix: (get('backup_r2_prefix', 'al1abb-budget-backup') || '').replace(/^\/+|\/+$/g, ''),
+    accessKeyId: (get('backup_r2_access_key_id', '') || '').trim(),
+    secretAccessKey: get('backup_r2_secret_key', '') || '',
+  }
+  cfg.ready = !!(cfg.endpoint && cfg.bucket && cfg.accessKeyId && cfg.secretAccessKey)
+  return cfg
 }
 
 function remoteKeyOf(prefix, fileName) {
-  return prefix ? `${prefix}/${fileName}` : fileName;
+  return prefix ? `${prefix}/${fileName}` : fileName
 }
 
 /** 远端滚动裁剪：按 LastModified 倒序保留 KEEP_VERSIONS 个，批量删除其余 */
 async function pruneRemoteBackups(cfg, s3, opt) {
-  const objects = await s3.listObjects(cfg, cfg.prefix || "", opt);
+  const objects = await s3.listObjects(cfg, cfg.prefix || '', opt)
   // 远端 key 含可选前缀，只按文件名部分匹配本应用命名的备份
-  const mine = objects.filter((o) => BACKUP_FILE_RE.test(o.key.split("/").pop()));
-  mine.sort((a, b) => (b.lastModified || b.key).localeCompare(a.lastModified || a.key));
-  const doomed = mine.slice(KEEP_VERSIONS).map((o) => o.key);
-  if (!doomed.length) return [];
-  await s3.deleteObjects(cfg, doomed, opt);
-  return doomed;
+  const mine = objects.filter(o => BACKUP_FILE_RE.test(o.key.split('/').pop()))
+  mine.sort((a, b) => (b.lastModified || b.key).localeCompare(a.lastModified || a.key))
+  const doomed = mine.slice(KEEP_VERSIONS).map(o => o.key)
+  if (!doomed.length) return []
+  await s3.deleteObjects(cfg, doomed, opt)
+  return doomed
 }
 
-function recordOutcome(okFlag, detail = "") {
-  setSetting("backup_last_run_at", nowIso());
-  setSetting("backup_last_result", okFlag ? "ok" : String(detail).slice(0, 300));
+function recordOutcome(okFlag, detail = '') {
+  setSetting('backup_last_run_at', nowIso())
+  setSetting('backup_last_result', okFlag ? 'ok' : String(detail).slice(0, 300))
 }
 
 // 注入接口约定：{ listObjects, putObject, deleteObjects }；默认绑定到 server/s3.mjs
@@ -119,7 +117,7 @@ const defaultS3Binding = {
   listObjects: (cfg, prefix, opt) => s3Api.s3ListObjects(cfg, prefix, opt),
   putObject: (cfg, key, body, opt) => s3Api.s3PutObject(cfg, key, body, opt),
   deleteObjects: (cfg, keys, opt) => s3Api.s3DeleteObjects(cfg, keys, opt),
-};
+}
 
 /**
  * 执行一次完整备份并记录结果到 settings（backup_last_*）。
@@ -132,43 +130,43 @@ const defaultS3Binding = {
  * @param opts.s3             注入的 S3 实现（测试）
  */
 export async function runBackupNow(opts = {}) {
-  const dir = opts.dir ?? path.join(DATA_DIR, BACKUP_DIR_NAME);
-  const s3 = opts.s3 ?? defaultS3Binding;
-  const cfg = opts.s3Config ?? s3ConfigFromSettings();
-  const uploadRemote = opts.uploadRemote ?? cfg.ready;
+  const dir = opts.dir ?? path.join(DATA_DIR, BACKUP_DIR_NAME)
+  const s3 = opts.s3 ?? defaultS3Binding
+  const cfg = opts.s3Config ?? s3ConfigFromSettings()
+  const uploadRemote = opts.uploadRemote ?? cfg.ready
 
-  let result;
-  let prunedLocal = 0;
+  let result
+  let prunedLocal = 0
   try {
-    result = await createBackupFile({ dir, now: opts.now });
-    prunedLocal = pruneLocalBackups(dir).length;
+    result = await createBackupFile({ dir, now: opts.now })
+    prunedLocal = pruneLocalBackups(dir).length
   } catch (e) {
-    recordOutcome(false, e.message);
-    throw e;
+    recordOutcome(false, e.message)
+    throw e
   }
 
-  let uploaded = false;
-  let prunedRemote = [];
+  let uploaded = false
+  let prunedRemote = []
   if (uploadRemote) {
     if (!cfg.ready) {
-      recordOutcome(false, "R2 not configured");
-      const err = new Error("R2 not configured");
-      err.result = { file: result.fileName };
-      throw err;
+      recordOutcome(false, 'R2 not configured')
+      const err = new Error('R2 not configured')
+      err.result = { file: result.fileName }
+      throw err
     }
     try {
-      const key = remoteKeyOf(cfg.prefix, result.fileName);
-      await s3.putObject(cfg, key, fs.readFileSync(result.filePath), opts.opt);
-      uploaded = true;
-      prunedRemote = await pruneRemoteBackups(cfg, s3, opts.opt ?? {});
+      const key = remoteKeyOf(cfg.prefix, result.fileName)
+      await s3.putObject(cfg, key, fs.readFileSync(result.filePath), opts.opt)
+      uploaded = true
+      prunedRemote = await pruneRemoteBackups(cfg, s3, opts.opt ?? {})
     } catch (e) {
-      recordOutcome(false, e.message);
-      e.result = { file: result.fileName, uploaded };
-      throw e;
+      recordOutcome(false, e.message)
+      e.result = { file: result.fileName, uploaded }
+      throw e
     }
   }
 
-  recordOutcome(true);
+  recordOutcome(true)
   return {
     ok: true,
     file: result.fileName,
@@ -176,7 +174,7 @@ export async function runBackupNow(opts = {}) {
     prunedLocal,
     uploaded,
     prunedRemote,
-  };
+  }
 }
 
 /**

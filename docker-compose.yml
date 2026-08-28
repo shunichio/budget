@@ -1,19 +1,19 @@
 services:
   budget:
     build: .
-    image: xiaowen-ynab:latest
-    container_name: xiaowen-ynab
+    image: al1abb-budget:latest
+    container_name: al1abb-budget
     restart: unless-stopped
     environment:
       # 可选：设置认证密码后，网页端登录需要该密码
       APP_PASSWORD: ${APP_PASSWORD:-}
       # 可选：JWT 签名密钥；不设置时由 APP_PASSWORD 派生
       JWT_SECRET: ${JWT_SECRET:-}
-      PORT: "3001"
+      PORT: '3001'
       # SQLite 数据库固定放置于此（挂载卷持久化）
       DATA_DIR: /data
     ports:
-      - "${BUDGET_PORT:-3001}:3001"
+      - '${BUDGET_PORT:-3001}:3001'
     volumes:
       # 数据库持久化：宿主机可用 ./data:/data 绑定挂载，或使用命名卷
       - budget-data:/data

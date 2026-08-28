@@ -1,4 +1,4 @@
-# AGENTS.md — xiaowen-ynab
+# AGENTS.md — al1abb-budget
 
 Guidance for AI agents and contributors working in this repository.
 
@@ -16,13 +16,13 @@ Core goals:
 
 ## Tech Stack
 
-| Layer   | Stack                                                        |
-| ------- | ------------------------------------------------------------ |
-| Frontend | React 18 + TypeScript + Vite + Tailwind CSS v4              |
-| Backend  | Node.js (ESM, `.mjs`) + Express 4 + better-sqlite3          |
-| Data     | SQLite (`data/budget.db`), versioned migrations at startup   |
-| Tests    | Vitest (node env for server, jsdom-capable for React)        |
-| CI       | GitHub Actions, runs on every push/PR to `dev`               |
+| Layer    | Stack                                                      |
+| -------- | ---------------------------------------------------------- |
+| Frontend | React 18 + TypeScript + Vite + Tailwind CSS v4             |
+| Backend  | Node.js (ESM, `.mjs`) + Express 4 + better-sqlite3         |
+| Data     | SQLite (`data/budget.db`), versioned migrations at startup |
+| Tests    | Vitest (node env for server, jsdom-capable for React)      |
+| CI       | GitHub Actions, runs on every push/PR to `dev`             |
 
 Node 20+ is required. Use `npm ci` in CI and `npm install` locally.
 
