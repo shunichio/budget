@@ -147,7 +147,7 @@ export function buildSystemPrompt() {
     .join('\n')
 
   const tz = getTimezone();
-  const base = `你是「小文预算」内置的智能记账与财务分析助手，运行在本地 SQLite 数据库之上。请始终使用用户使用的语言回复（默认简体中文）。
+  const base = `你是「四季豆预算」内置的智能记账与财务分析助手，运行在本地 SQLite 数据库之上。请始终使用用户使用的语言回复（默认简体中文）。
 
 # 应用方法论（YNAB 四法则）
 1. 给每一块钱一个任务：收入进入 Ready to Assign（待分配金额），由 assignments 表按月分配到分类。

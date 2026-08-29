@@ -1,7 +1,7 @@
 export type Lang = 'zh' | 'en'
 
 const zh = {
-  appName: "小文预算",
+  appName: "四季豆预算",
   nav_budget: "预算",
   nav_accounts: "账户",
   nav_reports: "报表",
@@ -140,7 +140,7 @@ const zh = {
   rep_aomDays: "{n} 天",
   rep_aomDesc: "你的钱平均在你手中停留的天数——数字越大，说明财务弹性越好。",
   rep_months: "近 {n} 月",
-  empty_welcomeTitle: "欢迎使用小文预算",
+  empty_welcomeTitle: "欢迎使用四季豆预算",
   empty_welcomeDesc:
     "基于 YNAB 四大法则的本地记账与预算工具：给每一块钱一个任务，拥抱真实开支，灵活应变，让资金账龄不断增长。",
   empty_loadDemo: "载入示例数据体验",
@@ -395,7 +395,7 @@ const en: typeof zh = {
   rep_aomDays: "{n} days",
   rep_aomDesc: "How long money sits before being spent — higher means more breathing room.",
   rep_months: "Last {n} months",
-  empty_welcomeTitle: "Welcome to Xiaowen Budget",
+  empty_welcomeTitle: "Welcome to Al1abb Budget",
   empty_welcomeDesc:
     "A local-first budgeting tool built on the YNAB method: give every yuan a job, embrace true expenses, roll with the punches, and grow your age of money.",
   empty_loadDemo: "Load demo data",
