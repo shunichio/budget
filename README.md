@@ -1,20 +1,18 @@
 <div align="center">
 
-# 小文预算 · Xiaowen Budget
+# 四季豆预算 · Al1abb Budget
 
-**本地优先的 YNAB 式零基预算应用，内置 AI 记账助手**
+**基于 Xiaowen Budget 的个人自用版，实现更多个性化功能**
 
-[![CI](https://github.com/iamshaynez/xiaowen-ynab/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/iamshaynez/xiaowen-ynab/actions/workflows/ci.yml)
-[![Node](https://img.shields.io/badge/node-20%2B-brightgreen)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-[English](./README.en.md) | 简体中文
+> 本项目 Fork 自 [Xiaowen Budget](https://github.com/iamshaynez/xiaowen-ynab)，感谢原作者的开源精神。
 
 </div>
 
 ---
 
-小文预算是一套完全运行在你自己机器上的零基预算（Zero-based Budgeting）工具：账本、预算、报表、AI 助手全部落在一台设备上的单个 SQLite 文件里。它遵循 YNAB 四法则——给每一块钱一个任务、拥抱真实开支、灵活应变、关注资金账龄，并把「AI 直接替你查账、记账」作为一等公民：AI 助手通过受控 SQL 工具读写你的本地数据库，所有写操作必须经你确认；你还可以把同一个助手接入 Telegram 与个人微信，随时随地在聊天软件里记账。
+四季豆预算是一套完全运行在你自己机器上的零基预算（Zero-based Budgeting）工具：账本、预算、报表、AI 助手全部落在一台设备上的单个 SQLite 文件里。它遵循 YNAB 四法则——给每一块钱一个任务、拥抱真实开支、灵活应变、关注资金账龄，并把「AI 直接替你查账、记账」作为一等公民：AI 助手通过受控 SQL 工具读写你的本地数据库，所有写操作必须经你确认；你还可以把同一个助手接入 Telegram 与个人微信，随时随地在聊天软件里记账。
 
 ## 功能特性
 
@@ -100,8 +98,8 @@ flowchart LR
 环境要求：Node.js 20+。
 
 ```bash
-git clone https://github.com/iamshaynez/xiaowen-ynab.git
-cd xiaowen-ynab
+git clone https://github.com/shunichio/budget.git
+cd budget
 npm install
 npm run dev
 ```
@@ -192,14 +190,7 @@ APP_PASSWORD=your-password docker compose up -d --build
 
 本项目采用 TDD 工作流：先写失败测试，再写实现。服务端新逻辑必须带有同目录的 `*.test.mjs`，React 组件应有 `*.test.tsx` 覆盖核心行为。
 
-## 参与贡献
-
-欢迎 Issue 与 PR：
-
-1. Fork 并从 `dev` 切出分支；
-2. 保证 `npm run typecheck` 与 `npm test` 通过（CI 对 `dev` 的 PR 强制绿检）；
-3. 提交信息遵循 `feat:` / `fix:` / `chore:` 约定式前缀。
-
 ## License
 
-[MIT](./LICENSE) © [Xiaowen Zhang](https://github.com/iamshaynez)
+[MIT](./LICENSE) © [Xiaowen Zhang](https://github.com/iamshaynez)  
+Additional modifications © [Shunichio](https://github.com/shunichio)
