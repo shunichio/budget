@@ -280,11 +280,11 @@ export function TransactionsPage() {
       {/* Table */}
       <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 pt-3 md:px-6">
         <div className="min-w-[980px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
-          <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80`}>
+          <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80 px-3`}>
             <div className="px-2">
               <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAll} title={t("txp_selectAll")} className="accent-brand-600" />
             </div>
-            <div className={headCls}>{t("tx_status")}</div>
+            <div className={`${headCls} !text-center`}>{t("tx_status")}</div>
             <div className={headCls}>{t("tx_date")}</div>
             <div className={headCls}>{t("txp_account")}</div>
             <div className={headCls}>{t("tx_payee")}</div>
@@ -409,7 +409,7 @@ export function TransactionsPage() {
 /* ------------------------- styles ------------------------- */
 
 const gridCls =
-  "grid grid-cols-[24px_34px_100px_110px_minmax(130px,1fr)_minmax(140px,1fr)_minmax(80px,1fr)_128px_128px_64px] items-center gap-x-1";
+  "grid grid-cols-[40px_50px_100px_110px_minmax(130px,1fr)_minmax(140px,1fr)_minmax(80px,1fr)_128px_128px_64px] items-center gap-x-1";
 const headCls = "px-2 py-2 text-left text-[11px] font-bold uppercase tracking-wide text-slate-400";
 const searchCls =
   "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100";

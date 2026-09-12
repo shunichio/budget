@@ -356,7 +356,7 @@ function HeaderName({ name, onSave }: { name: string; onSave: (n: string) => voi
 
 /* ------------------------- Form row ------------------------- */
 
-const gridCls = "grid grid-cols-[34px_110px_minmax(140px,1fr)_minmax(130px,1fr)_minmax(90px,1fr)_128px_128px_140px] items-center gap-x-1";
+const gridCls = "grid grid-cols-[50px_120px_minmax(140px,1fr)_minmax(130px,1fr)_minmax(90px,1fr)_128px_128px_140px] items-center gap-x-1";
 
 function TxFormRow({
   form,
@@ -443,8 +443,8 @@ function TxTable({
 
   return (
     <div className="min-w-[940px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
-      <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80`}>
-        <div className={headCls}>{t("tx_status")}</div>
+      <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80 px-3`}>
+        <div className={`${headCls} !text-center`}>{t("tx_status")}</div>
         <div className={headCls}>{t("tx_date")}</div>
         <div className={headCls}>{t("tx_payee")}</div>
         <div className={headCls}>{t("tx_category")}</div>
