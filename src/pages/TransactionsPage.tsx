@@ -236,14 +236,16 @@ export function TransactionsPage() {
             </button>
           )}
         </div>
-        <select className={searchCls + " w-auto"} value={accFilter} onChange={(e) => setAccFilter(e.target.value)} aria-label={t("txp_account")}>
-          <option value="">{t("txp_allAccounts")}</option>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.name}
-            </option>
-          ))}
-        </select>
+        <div className="relative w-72">
+          <select className={searchCls + " w-auto"} value={accFilter} onChange={(e) => setAccFilter(e.target.value)} aria-label={t("txp_account")}>
+            <option value="">{t("txp_allAccounts")}</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <button
           onClick={() => setOnlyUncat(!onlyUncat)}
           className={`rounded-lg border px-3 py-2 text-[13px] font-medium transition-colors ${

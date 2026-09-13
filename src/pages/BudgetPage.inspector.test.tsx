@@ -113,11 +113,28 @@ describe("BudgetPage Inspector responsive layout", () => {
     expect(backdrop).not.toBeNull();
   });
 
-  it("keeps the inline sidebar layout on very wide screens via breakpoint overrides", async () => {
+  it("pins the inspector to the right edge at full screen height, always visible while scrolling on very wide screens", async () => {
     await openInspector();
     const dialog = await screen.findByRole("dialog");
-    expect(dialog.className).toContain("min-[1680px]:static");
-    expect(dialog.className).toContain("min-[1680px]:max-w-none");
+    const cls = dialog.className.split(/\s+/);
+    // 不再 static（会随页面滚出视野）：钉在滚动容器顶部，高度充满屏幕，内容超高时面板内部滚动
+    expect(cls).not.toContain("min-[1680px]:static");
+    expect(cls).toContain("min-[1680px]:sticky");
+    expect(cls).toContain("min-[1680px]:top-0");
+    expect(cls).toContain("min-[1680px]:bottom-auto");
+    expect(cls).toContain("min-[1680px]:self-start");
+    expect(cls).toContain("min-[1680px]:h-screen");
+    expect(cls).toContain("min-[1680px]:max-w-none");
+    expect(cls).toContain("min-[1680px]:shadow-none");
+    // sticky 的包含块必须随内容长高：行容器与主列从 h-full 改为 min-h-full
+    const row = dialog.parentElement!;
+    const rowCls = row.className.split(/\s+/);
+    expect(rowCls).toContain("min-h-full");
+    expect(rowCls).not.toContain("h-full");
+    const mainCol = row.firstElementChild as HTMLElement;
+    const mainCls = mainCol.className.split(/\s+/);
+    expect(mainCls).toContain("min-h-full");
+    expect(mainCls).not.toContain("h-full");
     const backdrop = document.querySelector('div[aria-hidden="true"]');
     expect(backdrop?.className).toContain("min-[1680px]:hidden");
   });

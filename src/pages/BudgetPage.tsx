@@ -156,8 +156,8 @@ export function BudgetPage() {
   if (emptyStart) return <EmptyStart />;
 
   return (
-    <div className="flex h-full">
-      <div className="flex h-full min-w-[1060px] flex-1 flex-col">
+    <div className="flex min-h-full">
+      <div className="flex min-h-full min-w-[1060px] flex-1 flex-col">
         {/* Header */}
         <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center gap-3 px-4 pb-2 pt-3 md:px-6">
@@ -868,7 +868,7 @@ function Inspector({
         key={cat?.id ?? "rta"}
         role="dialog"
         aria-label={sel.kind === "cat" ? (cat?.name ?? "") : t("inspector_readyToAssign")}
-        className="anim-slide fixed inset-y-0 right-0 z-40 h-full w-[320px] max-w-[85vw] shrink-0 overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-pop min-[1680px]:static min-[1680px]:z-auto min-[1680px]:max-w-none min-[1680px]:shadow-none"
+        className="anim-slide fixed inset-y-0 right-0 z-40 h-full w-[320px] max-w-[85vw] shrink-0 overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-pop min-[1680px]:sticky min-[1680px]:top-0 min-[1680px]:bottom-auto min-[1680px]:z-auto min-[1680px]:max-w-none min-[1680px]:self-start min-[1680px]:h-screen min-[1680px]:shadow-none"
       >
         {sel.kind === "rta" ? (
           <>
