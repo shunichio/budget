@@ -204,6 +204,21 @@ export function AccountDetailPage({ id }: { id: string }) {
 
       {/* Register */}
       <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 pt-3 md:px-6">
+        
+        {/* New transaction form */}
+        <div className="mb-4 min-w-[920px] overflow-visible rounded-xl border border-brand-200 bg-brand-50/40 shadow-card">
+          <div className="flex items-center gap-2 rounded-t-xl border-b border-brand-100 bg-white/70 px-4 py-2 text-[13px] font-semibold text-brand-700">
+            <Plus size={14} /> {t("tx_add")}
+            <span className="ml-auto text-[11px] font-normal text-slate-400">{t("tx_saveAnother")}</span>
+          </div>
+          <TxFormRow
+            form={form}
+            setForm={setForm}
+            excludeAccountId={id}
+            onSave={saveNew}
+          />
+        </div>
+
         <TxTable
           txs={visible}
           editingId={editingId}
@@ -223,19 +238,7 @@ export function AccountDetailPage({ id }: { id: string }) {
           }}
         />
 
-        {/* New transaction form */}
-        <div className="mt-4 min-w-[920px] overflow-visible rounded-xl border border-brand-200 bg-brand-50/40 shadow-card">
-          <div className="flex items-center gap-2 rounded-t-xl border-b border-brand-100 bg-white/70 px-4 py-2 text-[13px] font-semibold text-brand-700">
-            <Plus size={14} /> {t("tx_add")}
-            <span className="ml-auto text-[11px] font-normal text-slate-400">{t("tx_saveAnother")}</span>
-          </div>
-          <TxFormRow
-            form={form}
-            setForm={setForm}
-            excludeAccountId={id}
-            onSave={saveNew}
-          />
-        </div>
+        
       </div>
 
       {reconciling && (
