@@ -226,7 +226,7 @@ export function TransactionsPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 px-4 pt-4 md:px-6">
+      <div className="flex flex-wrap items-center gap-3 px-4 py-4 md:px-6">
         <div className="relative w-72">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input className={"pl-8 " + searchCls} placeholder={t("txp_search")} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
@@ -259,7 +259,7 @@ export function TransactionsPage() {
 
       {/* Bulk bar */}
       {selected.size > 0 && (
-        <div className="anim-pop mx-4 mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 md:mx-6">
+        <div className="anim-pop mx-4 mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2 md:mx-6">
           <span className="text-[13px] font-semibold text-brand-700">{t("txp_selected", { n: selected.size })}</span>
           <div className="w-48">
             <CategorySelect value={bulkCat} onChange={setBulkCat} />
@@ -280,7 +280,7 @@ export function TransactionsPage() {
       )}
 
       {/* Table */}
-      <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 pt-3 md:px-6">
+      <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 md:px-6">
         {/* min-w-min（= min-content）让卡片最小宽度由下面 gridCls 的列宽模板自动推导，
             不再写死像素值：窄屏时卡片随内容一起变宽、由外层容器横向滚动，
             否则栅格最小宽度大于卡片时会把最后几列挤到白底之外 */}

@@ -201,7 +201,7 @@ export function AccountDetailPage({ id }: { id: string }) {
       </div>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-4 pt-4 md:px-6">
+      <div className="flex items-center gap-3 px-4 py-4 md:px-6">
         <div className="relative w-72">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input className={inputCls + " pl-8"} placeholder={t("tx_search")} value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -209,7 +209,7 @@ export function AccountDetailPage({ id }: { id: string }) {
       </div>
 
       {/* Register */}
-      <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 pt-3 md:px-6">
+      <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 md:px-6">
         
         {/* New transaction form */}
         <div className="mb-4 min-w-min overflow-visible rounded-xl border border-brand-200 bg-brand-50/40 shadow-card">
