@@ -146,23 +146,29 @@ export function AccountDetailPage({ id }: { id: string }) {
           {accMeta?.closed === 1 && (
             <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-white">{t("account_closedTip")}</span>
           )}
-          <div className="ml-auto flex items-center gap-5">
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-400">{t("account_clearedBalance")}</div>
-              <div className="num text-sm font-semibold text-slate-600">{fmtMoney(clearedBalance)}</div>
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-400">{t("account_balance")}</div>
-              <div className={`num text-xl font-bold ${reg.account.balance < 0 ? "text-rose-600" : "text-slate-900"}`}>
-                {fmtMoney(reg.account.balance)}
+          {/* 窄屏（< sm）下余额与操作按钮整体换到第二排并纵向堆叠，
+              避免按钮被压窄到几十像素、中文只能一个字一行竖排 */}
+          <div className="ml-auto flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-5 sm:gap-y-3">
+            <div className="flex items-center justify-around gap-5 sm:justify-end">
+              <div className="text-right">
+                <div className="text-[11px] uppercase tracking-wide text-slate-400">{t("account_clearedBalance")}</div>
+                <div className="num text-sm font-semibold text-slate-600">{fmtMoney(clearedBalance)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[11px] uppercase tracking-wide text-slate-400">{t("account_balance")}</div>
+                <div className={`num text-xl font-bold ${reg.account.balance < 0 ? "text-rose-600" : "text-slate-900"}`}>
+                  {fmtMoney(reg.account.balance)}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Btn onClick={() => setReconciling(true)}>
+            {/* shrink-0 + whitespace-nowrap：按钮保持自然宽度，放不下就整颗换行，
+                文字永远不会被挤成竖排 */}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <Btn className="shrink-0 whitespace-nowrap" onClick={() => setReconciling(true)}>
                 <Check size={14} /> {t("account_reconcile")}
               </Btn>
               {!isCredit && (
-                <Btn onClick={async () => {
+                <Btn className="shrink-0 whitespace-nowrap" onClick={async () => {
                   if (!confirm(t("confirm_closeAccount"))) return;
                   try {
                     await api.updateAccount(id, { closed: accMeta?.closed !== 1 });
@@ -174,7 +180,7 @@ export function AccountDetailPage({ id }: { id: string }) {
                   {accMeta?.closed === 1 ? t("account_reopen") : t("account_close")}
                 </Btn>
               )}
-              <Btn variant="danger" title={t("account_deleteWarn")} onClick={async () => {
+              <Btn variant="danger" className="shrink-0" title={t("account_deleteWarn")} onClick={async () => {
                 if (!confirm(lang === "zh" ? "确定删除该账户？" : "Delete this account?")) return;
                 try {
                   await api.deleteAccount(id);
@@ -206,7 +212,7 @@ export function AccountDetailPage({ id }: { id: string }) {
       <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 pt-3 md:px-6">
         
         {/* New transaction form */}
-        <div className="mb-4 min-w-[920px] overflow-visible rounded-xl border border-brand-200 bg-brand-50/40 shadow-card">
+        <div className="mb-4 min-w-min overflow-visible rounded-xl border border-brand-200 bg-brand-50/40 shadow-card">
           <div className="flex items-center gap-2 rounded-t-xl border-b border-brand-100 bg-white/70 px-4 py-2 text-[13px] font-semibold text-brand-700">
             <Plus size={14} /> {t("tx_add")}
             <span className="ml-auto text-[11px] font-normal text-slate-400">{t("tx_saveAnother")}</span>
@@ -444,8 +450,10 @@ function TxTable({
 }) {
   const { t, lang } = useApp();
 
+  // min-w-min（= min-content）让最小宽度跟随上面的列宽模板，窄屏时整张卡片
+  // 随内容变宽并由外层容器横向滚动，避免最后一列被挤到卡片白底之外
   return (
-    <div className="min-w-[940px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
+    <div className="min-w-min overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
       <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80 px-3`}>
         <div className={`${headCls} !text-center`}>{t("tx_status")}</div>
         <div className={headCls}>{t("tx_date")}</div>
@@ -537,7 +545,7 @@ function TxTable({
               <span className={`num text-[13px] ${tx.balance !== undefined && tx.balance < 0 ? "text-rose-500" : "text-slate-400"}`}>
                 {tx.balance !== undefined ? fmtMoney(tx.balance) : ""}
               </span>
-              <div className="row-actions absolute -left-16 flex gap-1 rounded-lg border border-slate-100 bg-white p-0.5 opacity-0 shadow-pop transition-opacity group-hover:opacity-100">
+              <div className="row-actions absolute left-0 flex gap-1 rounded-lg border border-slate-100 bg-white p-0.5 opacity-0 shadow-pop transition-opacity group-hover:opacity-100">
                 {!tx.isStart && (
                   <>
                     <button onClick={() => onStartEdit(tx)} className="rounded-md p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-600" title={t("common_edit")}>

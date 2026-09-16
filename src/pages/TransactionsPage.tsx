@@ -281,7 +281,10 @@ export function TransactionsPage() {
 
       {/* Table */}
       <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 pt-3 md:px-6">
-        <div className="min-w-[980px] overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
+        {/* min-w-min（= min-content）让卡片最小宽度由下面 gridCls 的列宽模板自动推导，
+            不再写死像素值：窄屏时卡片随内容一起变宽、由外层容器横向滚动，
+            否则栅格最小宽度大于卡片时会把最后几列挤到白底之外 */}
+        <div className="min-w-min overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
           <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80 px-3`}>
             <div className="px-2">
               <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAll} title={t("txp_selectAll")} className="accent-brand-600" />
@@ -381,7 +384,7 @@ export function TransactionsPage() {
                 <span className="num px-2 text-right text-[13px] text-emerald-600">{tx.amount > 0 ? fmtMoney(tx.amount) : ""}</span>
                 <div className="relative flex items-center justify-end pr-1">
                   {!tx.isStart && (
-                    <div className="row-actions absolute -left-16 flex gap-1 rounded-lg border border-slate-100 bg-white p-0.5 opacity-0 shadow-pop transition-opacity group-hover:opacity-100">
+                    <div className="row-actions flex gap-1 rounded-lg border border-slate-100 bg-white p-0.5 opacity-0 shadow-pop transition-opacity group-hover:opacity-100">
                       <button onClick={() => startEdit(tx)} className="rounded-md p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-600" title={t("common_edit")}>
                         <Pencil size={12} />
                       </button>

@@ -5,6 +5,11 @@ import { useApp } from '../store'
 import type { ImChannel, ImChannelType, Lang, WechatLoginState } from '../types'
 import { Btn, Modal, inputCls } from '../components/ui'
 
+// 「通用」卡片首排控件（语言切换 / 货币符号 / 时区）统一高度：38px 正好等于
+// ${inputCls} 的自然高度（py-2 + text-sm + 上下边框）。不给语言切换显式高度的话，
+// 它是 24px 胶囊 + 2px 内边距 = 30px，与输入框并排时会差 8px、底边参差。
+const controlH = 'h-[38px]'
+
 function Card({ title, desc, children }: { title: string; desc?: string; children: React.ReactNode }) {
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-card">
@@ -209,12 +214,12 @@ export function SettingsPage() {
       <h1 className="text-lg font-bold text-slate-800">{t('settings_title')}</h1>
 
       <Card title={t('settings_general')}>
-        <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
+        <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
           <div>
             <span className="mb-1 block text-xs font-medium text-slate-500">{t('settings_language')}</span>
-            <div className="flex overflow-hidden rounded-full border border-slate-200 p-0.5">
+            <div className={`flex ${controlH} overflow-hidden rounded-full border border-slate-200 p-0.5`}>
               {(['zh', 'en'] as Lang[]).map(l => (
-                <button key={l} onClick={() => setLang(l)} className={`rounded-full px-3.5 py-1 text-xs font-medium transition-colors ${lang === l ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
+                <button key={l} onClick={() => setLang(l)} className={`inline-flex items-center justify-center rounded-full px-3.5 py-1 text-xs font-medium transition-colors ${lang === l ? 'bg-brand-600 text-white' : 'text-slate-500 hover:text-slate-700'}`}>
                   {l === 'zh' ? '中文' : 'EN'}
                 </button>
               ))}
@@ -226,13 +231,13 @@ export function SettingsPage() {
               <input
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value.slice(0, 3))}
-                className={`${inputCls} w-20 text-center`}
+                className={`${inputCls} ${controlH} w-20 text-center`}
               />
             </div>
           </div>
           <div>
             <span className="mb-1 block text-xs font-medium text-slate-500">{t("settings_timezone")}</span>
-            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={`${inputCls} min-w-[220px]`}>
+            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={`${inputCls} ${controlH} min-w-[220px]`}>
               {!tzOptions.includes(timezone) && <option value={timezone}>{timezone}</option>}
               {tzOptions.map((tz) => (
                 <option key={tz} value={tz}>
@@ -255,10 +260,11 @@ export function SettingsPage() {
               <span className="mt-0.5 block text-[11px] leading-relaxed text-slate-400">{t("settings_showCcPaymentsHint")}</span>
             </span>
           </label>
-          <div className="flex items-end">
+          
+        </div>
+        <div className="flex justify-end items-end ">
             <Btn onClick={saveGeneral}>{t("common_save")}</Btn>
           </div>
-        </div>
       </Card>
 
       <Card title={t('settings_aiSection')} desc={t('settings_aiDesc')}>
