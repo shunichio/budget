@@ -44,9 +44,11 @@ type Selection =
   | { kind: "cat"; cat: BudCategory; groupId: string; month: string }
   | null;
 
+// 列宽按 10 万级金额估算，需容纳千分位与小数，如 ¥123,456.78 / -¥123,456.78：
+// 分配、可用列有 px-2 内边距，活动列只有 pr-2。
 const GRID =
-  "grid grid-cols-[minmax(150px,1fr)_92px_76px_100px_92px_76px_100px_92px_76px_100px] items-center gap-x-2";
-const MONTH_GRID = "grid grid-cols-[92px_76px_100px] items-center gap-x-2";
+  "grid grid-cols-[minmax(150px,1fr)_112px_96px_120px_112px_96px_120px_112px_96px_120px] items-center gap-x-2";
+const MONTH_GRID = "grid grid-cols-[112px_96px_120px] items-center gap-x-2";
 
 export function BudgetPage() {
   const { boot, t, lang, refreshBoot, toast } = useApp();
@@ -162,7 +164,7 @@ export function BudgetPage() {
 
   return (
     <div className="flex min-h-full">
-      <div className="flex min-h-full min-w-[1060px] flex-1 flex-col">
+      <div className="flex min-h-full min-w-[1240px] flex-1 flex-col">
         {/* Header */}
         <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center gap-3 px-4 pb-2 pt-3 md:px-6">
@@ -655,16 +657,19 @@ function GroupBlock({
             },
             { assigned: 0, activity: 0, available: 0 }
           );
+          const assignedText = has && !income ? fmtMoney(tot.assigned) : "–";
+          const activityText = has ? fmtMoney(tot.activity) : "–";
+          const availableText = has && !income ? fmtMoney(tot.available) : "–";
           return (
             <div key={m} className={`${MONTH_GRID} col-span-3 rounded-lg py-0.5 ${m === activeMonth && has ? "bg-brand-50" : has ? "bg-slate-100" : ""}`}>
-              <div className="num pr-2 text-right text-[13px] font-semibold text-slate-500">
-                {has && !income ? fmtMoney(tot.assigned) : "–"}
+              <div className="num min-w-0 truncate pr-2 text-right text-[13px] font-semibold text-slate-500" title={assignedText}>
+                {assignedText}
               </div>
-              <div className={`num pr-2 text-right text-[13px] font-semibold ${income && has ? "text-emerald-600" : "text-slate-500"}`}>
-                {has ? fmtMoney(tot.activity) : "–"}
+              <div className={`num min-w-0 truncate pr-2 text-right text-[13px] font-semibold ${income && has ? "text-emerald-600" : "text-slate-500"}`} title={activityText}>
+                {activityText}
               </div>
-              <div className="num pr-2 text-right text-[13px] font-bold text-slate-600">
-                {has && !income ? fmtMoney(tot.available) : "–"}
+              <div className="num min-w-0 truncate pr-2 text-right text-[13px] font-bold text-slate-600" title={availableText}>
+                {availableText}
               </div>
             </div>
           );
@@ -754,6 +759,9 @@ function Row({
         const cat = catIndex[m]?.get(catId) ?? null;
         const pct = cat ? goalPct(cat) : null;
         const isEditing = editingMonth === m && !!cat;
+        const assignedText = !cat || cat.assigned === 0 ? "–" : fmtMoney(cat.assigned);
+        const activityText = !cat ? "–" : fmtMoney(cat.activity);
+        const availableText = !cat || income ? "–" : fmtMoney(cat.available);
         return (
           <div key={m} className={`${MONTH_GRID} relative col-span-3 rounded-lg ${m === activeMonth && cat ? "bg-brand-50" : cat ? "bg-slate-100" : ""}`}>
             {pct != null && pct > 0 && (
@@ -770,9 +778,9 @@ function Row({
                 />
               </div>
             )}
-            <div className="text-right" onClick={(e) => e.stopPropagation()}>
+            <div className="min-w-0 overflow-hidden text-right" onClick={(e) => e.stopPropagation()}>
               {income ? (
-                <span className="num block px-2 py-1 text-right text-slate-300">–</span>
+                <span className="num block truncate px-2 py-1 text-right text-slate-300" title={assignedText}>–</span>
               ) : isEditing ? (
                 <input
                   autoFocus
@@ -789,20 +797,21 @@ function Row({
                 <button
                   onClick={() => onStartEdit(m)}
                   disabled={!cat}
-                  className={`num w-full rounded-md px-2 py-1 text-right transition-colors hover:bg-brand-50 disabled:pointer-events-none ${
+                  title={assignedText}
+                  className={`num block w-full truncate rounded-md px-2 py-1 text-right transition-colors hover:bg-brand-50 disabled:pointer-events-none ${
                     !cat || cat.assigned === 0 ? "text-slate-300 hover:text-brand-500" : "font-medium text-slate-700"
                   }`}
                 >
-                  {!cat || cat.assigned === 0 ? "–" : fmtMoney(cat.assigned)}
+                  {assignedText}
                 </button>
               )}
             </div>
-            <div className={`num pr-2 text-right ${!cat ? "text-slate-300" : cat.activity > 0 ? "text-emerald-600" : "text-slate-500"}`}>
-              {!cat ? "–" : fmtMoney(cat.activity)}
+            <div className={`num min-w-0 truncate pr-2 text-right ${!cat ? "text-slate-300" : cat.activity > 0 ? "text-emerald-600" : "text-slate-500"}`} title={activityText}>
+              {activityText}
             </div>
-            <div className="pr-2 text-right">
-              <span className={`num rounded-md px-2 py-1 text-[13px] font-semibold ${!cat || income ? "text-slate-300" : availCls(cat)}`}>
-                {!cat || income ? "–" : fmtMoney(cat.available)}
+            <div className="min-w-0 overflow-hidden pr-2 text-right">
+              <span className={`num block truncate rounded-md px-2 py-1 text-[13px] font-semibold ${!cat || income ? "text-slate-300" : availCls(cat)}`} title={availableText}>
+                {availableText}
               </span>
             </div>
           </div>
