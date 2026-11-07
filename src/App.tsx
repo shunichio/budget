@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { Menu, Wallet } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Menu, Settings, Wallet } from "lucide-react";
 import { AppProvider, useApp } from "./store";
+import { BottomTabBar } from "./components/BottomTabBar";
 import { Sidebar } from "./components/Sidebar";
 import { BudgetPage } from "./pages/BudgetPage";
 import { AccountsPage } from "./pages/AccountsPage";
@@ -27,9 +28,13 @@ function Shell() {
   const route = useHashRoute();
   const { loading, authEnabled, authenticated } = useApp();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const mainRef = useRef<HTMLElement>(null);
 
-  // 移动端点击任意导航后自动收起抽屉
-  useEffect(() => setMobileNavOpen(false), [route]);
+  // 移动端点击任意导航后自动收起抽屉,并滚回页面顶部
+  useEffect(() => {
+    setMobileNavOpen(false);
+    mainRef.current?.scrollTo(0, 0);
+  }, [route]);
 
   if (loading) {
     return (
@@ -59,8 +64,10 @@ function Shell() {
 
       <div className="flex min-h-0 flex-1">
         <Sidebar route={route} open={mobileNavOpen} onNavigate={() => setMobileNavOpen(false)} />
-        <main className="min-w-0 flex-1 overflow-auto md:ml-60">{page}</main>
+        <main ref={mainRef} className="min-w-0 flex-1 overflow-auto pb-16 md:ml-60 md:pb-0">{page}</main>
       </div>
+
+      <BottomTabBar route={route} />
 
       {mobileNavOpen && (
         <div className="fixed inset-0 z-40 bg-navy-950/45 md:hidden" onClick={() => setMobileNavOpen(false)} />
@@ -84,6 +91,13 @@ function MobileTopBar({ onMenu }: { onMenu: () => void }) {
         <Wallet size={14} className="text-white" />
       </span>
       <span className="text-sm font-bold text-slate-800">{t("appName")}</span>
+      <a
+        href="#/settings"
+        aria-label="nav_settings"
+        className="ml-auto rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+      >
+        <Settings size={18} />
+      </a>
     </header>
   );
 }

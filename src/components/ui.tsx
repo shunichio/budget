@@ -37,6 +37,49 @@ export function Modal({
   );
 }
 
+/**
+ * 移动端底部抽屉(消费方在桌面布局需要时自行包 md:hidden)。
+ * 与 Modal 不同:贴底滑入、顶部圆角、带安全区内边距,适配触屏单手操作。
+ */
+export function Sheet({
+  title,
+  onClose,
+  children,
+  className = "",
+}: {
+  title?: string;
+  onClose: () => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+
+  return (
+    <div className="anim-fade fixed inset-0 z-50 bg-navy-950/45 backdrop-blur-[2px]" onMouseDown={onClose}>
+      <div
+        className={`sheet-panel fixed inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-pop ${className}`}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 rounded-t-2xl border-b border-slate-100 bg-white px-5 py-3">
+          <span className="min-w-0 truncate text-[15px] font-semibold text-slate-900">{title ?? ""}</span>
+          <button
+            onClick={onClose}
+            aria-label="close"
+            className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X size={17} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function Btn({
   children,
   variant = "default",

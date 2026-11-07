@@ -84,6 +84,19 @@ body {
     transform: none;
   }
 }
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet-panel {
+  animation: slide-up 0.2s ease-out;
+}
 .anim-pop {
   animation: pop-in 0.16s ease-out;
 }

@@ -113,7 +113,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-5 right-5 z-[100] flex flex-col gap-2">
+      <div className="pointer-events-none fixed bottom-20 left-1/2 z-[100] flex -translate-x-1/2 flex-col items-center gap-2 md:bottom-5 md:left-auto md:right-5 md:translate-x-0 md:items-end">
         {toasts.map((tt) => (
           <div
             key={tt.id}
