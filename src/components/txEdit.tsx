@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { useApp } from "../store";
 import { parseAmountToCents, todayIso } from "../format";
+import { Field, inputCls } from "./ui";
 import type { CategoryGroup } from "../types";
 
 export interface FormState {
@@ -167,6 +168,91 @@ export function defaultIncomeCategory(groups: CategoryGroup[]): string {
 
 export function incomeCategoryIds(groups: CategoryGroup[]): Set<string> {
   return new Set(groups.filter((g) => g.is_income).flatMap((g) => g.categories.map((c) => c.id)));
+}
+
+/* ------------------------- 移动端表单(底部抽屉用) ------------------------- */
+
+/**
+ * 竖排交易表单,供移动端 Sheet 使用。与桌面行内格子的差异:
+ * - 转账用原生 select(PayeeSelect 的绝对定位下拉会被 Sheet 的 overflow 裁剪)
+ * - 每个字段带标签、全宽,触控友好
+ */
+export function MobileTxForm({
+  form,
+  setForm,
+  excludeAccountId,
+}: {
+  form: FormState;
+  setForm: (f: FormState) => void;
+  excludeAccountId?: string;
+}) {
+  const { t, boot, lang } = useApp();
+  const groups = boot?.groups ?? [];
+  const incomeIds = incomeCategoryIds(groups);
+  const defaultIncomeId = defaultIncomeCategory(groups);
+  const accounts = (boot?.accounts ?? []).filter((a) => a.id !== excludeAccountId && !a.closed);
+  const transferAcc = accounts.find((a) => a.id === form.transferAccountId);
+  return (
+    <div className="space-y-3 p-4">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t("tx_outflow")}>
+          <input
+            className={inputCls + " num text-right"}
+            inputMode="decimal"
+            placeholder="0.00"
+            value={form.outflow}
+            onChange={(e) => setForm({ ...form, outflow: e.target.value, inflow: "", categoryId: incomeIds.has(form.categoryId) ? "" : form.categoryId })}
+          />
+        </Field>
+        <Field label={t("tx_inflow")}>
+          <input
+            className={inputCls + " num text-right"}
+            inputMode="decimal"
+            placeholder="0.00"
+            value={form.inflow}
+            onChange={(e) => setForm({ ...form, inflow: e.target.value, outflow: "", categoryId: form.categoryId || defaultIncomeId })}
+          />
+        </Field>
+      </div>
+      <Field label={t("tx_payee")}>
+        <input
+          className={inputCls}
+          disabled={!!form.transferAccountId}
+          placeholder={transferAcc ? `→ ${transferAcc.name}` : lang === "zh" ? "收款方或商家" : "Payee"}
+          value={form.transferAccountId ? "" : form.payeeName}
+          onChange={(e) => setForm({ ...form, payeeName: e.target.value, transferAccountId: "" })}
+        />
+      </Field>
+      <Field label={t("tx_transferSection")}>
+        <select
+          className={inputCls}
+          value={form.transferAccountId}
+          onChange={(e) => {
+            const v = e.target.value;
+            setForm({ ...form, transferAccountId: v, payeeName: v ? "" : form.payeeName, categoryId: v ? "" : form.categoryId });
+          }}
+        >
+          <option value="">{lang === "zh" ? "不转账" : "No transfer"}</option>
+          {accounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label={t("tx_category")}>
+        <CategorySelect value={form.categoryId} disabled={!!form.transferAccountId} compact={false} onChange={(v) => setForm({ ...form, categoryId: v })} />
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label={t("tx_date")}>
+          <input type="date" className={inputCls} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
+        </Field>
+        <Field label={t("tx_memo")}>
+          <input className={inputCls} value={form.memo} onChange={(e) => setForm({ ...form, memo: e.target.value })} />
+        </Field>
+      </div>
+    </div>
+  );
 }
 
 export function AmountInput({

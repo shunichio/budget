@@ -15,15 +15,17 @@ import {
 import { api } from "../api";
 import { useApp } from "../store";
 import { fmtDate, fmtMoney, parseAmountToCents, todayIso } from "../format";
-import { Btn, Modal, Spinner, Field, inputCls } from "../components/ui";
-import { AmountInput, CategorySelect, PayeeSelect, defaultIncomeCategory, emptyForm, formAmount, incomeCategoryIds, type FormState } from "../components/txEdit";
+import { Btn, Modal, Sheet, Spinner, Field, inputCls, useMediaQuery } from "../components/ui";
+import { AmountInput, CategorySelect, MobileTxForm, PayeeSelect, defaultIncomeCategory, emptyForm, formAmount, incomeCategoryIds, type FormState } from "../components/txEdit";
 import { ACCOUNT_TYPE_LABELS } from "./AccountsPage";
 import type { Tx } from "../types";
 
 export function AccountDetailPage({ id }: { id: string }) {
   const { boot, t, lang, refreshBoot, toast } = useApp();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [reg, setReg] = useState<{ account: { name: string; type: string; balance: number }; transactions: Tx[] } | null>(null);
   const [form, setForm] = useState<FormState>(() => emptyForm());
+  const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(() => emptyForm());
   const [search, setSearch] = useState("");
@@ -89,6 +91,7 @@ export function AccountDetailPage({ id }: { id: string }) {
         amount,
       });
       setForm(emptyForm(boot?.settings.timezone));
+      setAdding(false);
       await Promise.all([load(), refreshBoot()]);
     } catch {
       toast(t("common_error"), "err");
@@ -131,6 +134,13 @@ export function AccountDetailPage({ id }: { id: string }) {
     } catch {
       toast(t("common_error"), "err");
     }
+  };
+
+  const handleDeleteTx = async (txid: string) => {
+    if (!confirm(t("confirm_deleteTx"))) return;
+    await api.deleteTx(txid);
+    setEditingId(null);
+    await Promise.all([load(), refreshBoot()]);
   };
 
   return (
@@ -202,7 +212,7 @@ export function AccountDetailPage({ id }: { id: string }) {
 
       {/* Toolbar */}
       <div className="flex items-center gap-3 px-4 py-4 md:px-6">
-        <div className="relative w-72">
+        <div className="relative w-full sm:w-72">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input className={inputCls + " pl-8"} placeholder={t("tx_search")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
@@ -210,20 +220,33 @@ export function AccountDetailPage({ id }: { id: string }) {
 
       {/* Register */}
       <div className="min-h-0 flex-1 overflow-auto px-4 pb-10 md:px-6">
-        
-        {/* New transaction form */}
-        <div className="mb-4 min-w-min overflow-visible rounded-xl border border-brand-200 bg-brand-50/40 shadow-card">
-          <div className="flex items-center gap-2 rounded-t-xl border-b border-brand-100 bg-white/70 px-4 py-2 text-[13px] font-semibold text-brand-700">
-            <Plus size={14} /> {t("tx_add")}
-            <span className="ml-auto text-[11px] font-normal text-slate-400">{t("tx_saveAnother")}</span>
+
+        {/* New transaction form:桌面为常驻行内表单,移动端为按钮 + 底部抽屉 */}
+        {isDesktop ? (
+          <div className="mb-4 min-w-min overflow-visible rounded-xl border border-brand-200 bg-brand-50/40 shadow-card">
+            <div className="flex items-center gap-2 rounded-t-xl border-b border-brand-100 bg-white/70 px-4 py-2 text-[13px] font-semibold text-brand-700">
+              <Plus size={14} /> {t("tx_add")}
+              <span className="ml-auto text-[11px] font-normal text-slate-400">{t("tx_saveAnother")}</span>
+            </div>
+            <TxFormRow
+              form={form}
+              setForm={setForm}
+              excludeAccountId={id}
+              onSave={saveNew}
+            />
           </div>
-          <TxFormRow
-            form={form}
-            setForm={setForm}
-            excludeAccountId={id}
-            onSave={saveNew}
-          />
-        </div>
+        ) : (
+          <Btn
+            variant="primary"
+            className="mb-4 w-full"
+            onClick={() => {
+              setForm(emptyForm(boot?.settings.timezone));
+              setAdding(true);
+            }}
+          >
+            <Plus size={15} /> {t("tx_add")}
+          </Btn>
+        )}
 
         <TxTable
           txs={visible}
@@ -233,19 +256,40 @@ export function AccountDetailPage({ id }: { id: string }) {
           onStartEdit={startEdit}
           onCancelEdit={() => setEditingId(null)}
           onSaveEdit={saveEdit}
-          onDelete={async (txid) => {
-            if (!confirm(t("confirm_deleteTx"))) return;
-            await api.deleteTx(txid);
-            await Promise.all([load(), refreshBoot()]);
-          }}
+          onDelete={handleDeleteTx}
           onToggleCleared={async (tx) => {
             await api.setTxStatus(tx.id, tx.cleared === 1 ? 0 : 1);
             await Promise.all([load(), refreshBoot()]);
           }}
         />
 
-        
+
       </div>
+
+      {/* 移动端:新建 / 编辑走底部抽屉 */}
+      {adding && !isDesktop && (
+        <Sheet title={t("tx_add")} onClose={() => setAdding(false)}>
+          <MobileTxForm form={form} setForm={setForm} excludeAccountId={id} />
+          <div className="px-4 pb-6">
+            <Btn variant="primary" className="w-full" onClick={saveNew}>
+              <Check size={14} /> {t("common_save")}
+            </Btn>
+          </div>
+        </Sheet>
+      )}
+      {editingId && !isDesktop && (
+        <Sheet onClose={() => setEditingId(null)}>
+          <MobileTxForm form={editForm} setForm={setEditForm} excludeAccountId={id} />
+          <div className="flex gap-2 px-4 pb-6">
+            <Btn variant="primary" className="flex-1" onClick={saveEdit}>
+              <Check size={14} /> {t("common_save")}
+            </Btn>
+            <Btn variant="danger" onClick={() => editingId && handleDeleteTx(editingId)}>
+              <Trash2 size={14} /> {t("common_delete")}
+            </Btn>
+          </div>
+        </Sheet>
+      )}
 
       {reconciling && (
         <ReconcileModal
@@ -449,11 +493,12 @@ function TxTable({
   onToggleCleared: (tx: Tx) => void;
 }) {
   const { t, lang } = useApp();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // min-w-min（= min-content）让最小宽度跟随上面的列宽模板，窄屏时整张卡片
   // 随内容变宽并由外层容器横向滚动，避免最后一列被挤到卡片白底之外
-  return (
-    <div className="min-w-min overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
+  return isDesktop ? (
+    <div data-testid="tx-desktop-table" className="min-w-min overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
       <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80 px-3`}>
         <div className={`${headCls} !text-center`}>{t("tx_status")}</div>
         <div className={headCls}>{t("tx_date")}</div>
@@ -561,6 +606,96 @@ function TxTable({
           </div>
         )
       )}
+    </div>
+  ) : (
+    <div data-testid="tx-card-list" className="space-y-2">
+      {txs.length === 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-card">{t("tx_empty")}</div>
+      )}
+      {txs.map((tx) =>
+        editingId === tx.id ? null : (
+          <MobileTxCard key={tx.id} tx={tx} onStartEdit={onStartEdit} onDelete={onDelete} onToggleCleared={onToggleCleared} />
+        )
+      )}
+    </div>
+  );
+}
+
+/* ------------------------- 移动端卡片 ------------------------- */
+
+function MobileTxCard({
+  tx,
+  onStartEdit,
+  onDelete,
+  onToggleCleared,
+}: {
+  tx: Tx;
+  onStartEdit: (tx: Tx) => void;
+  onDelete: (id: string) => void;
+  onToggleCleared: (tx: Tx) => void;
+}) {
+  const { t, lang } = useApp();
+  return (
+    <div className={`rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-card ${tx.reconciled ? "bg-slate-50/60" : ""}`}>
+      <div className="flex items-center gap-2.5">
+        <button
+          onClick={() => !tx.reconciled && onToggleCleared(tx)}
+          title={tx.reconciled ? "reconciled" : tx.cleared ? "cleared" : "uncleared"}
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+            tx.reconciled ? "bg-emerald-100 text-emerald-600" : tx.cleared ? "text-emerald-500" : "text-slate-200"
+          }`}
+        >
+          {tx.reconciled ? <Lock size={12} /> : tx.cleared ? <Check size={14} strokeWidth={3} /> : <Circle size={14} />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="min-w-0 truncate text-[14px] font-medium text-slate-700">
+              {tx.isStart ? (
+                <span className="italic text-slate-400">{t("tx_starting")}</span>
+              ) : tx.transferAccountId ? (
+                <span className="font-medium text-sky-600">
+                  {lang === "zh" ? `转账 ${tx.otherAccountName}` : `Transfer: ${tx.otherAccountName}`}
+                </span>
+              ) : (
+                tx.payeeName || "—"
+              )}
+            </span>
+            <span className={`num shrink-0 text-[14px] font-semibold ${tx.amount < 0 ? "text-rose-500" : "text-emerald-600"}`}>
+              {tx.amount < 0 ? fmtMoney(-tx.amount) : fmtMoney(tx.amount)}
+            </span>
+          </div>
+          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+            <span className="shrink-0">{fmtDate(tx.date, lang)}</span>
+            {tx.categoryName || (!tx.transferAccountId && !tx.isStart) ? (
+              <>
+                <span>·</span>
+                <span className="min-w-0 truncate">
+                  {tx.categoryName ?? <span className="italic">{t("tx_uncategorized")}</span>}
+                </span>
+              </>
+            ) : null}
+            {tx.memo && (
+              <>
+                <span>·</span>
+                <span className="min-w-0 truncate">{tx.memo}</span>
+              </>
+            )}
+            <span className={`num ml-auto shrink-0 ${tx.balance !== undefined && tx.balance < 0 ? "text-rose-500" : ""}`}>
+              {tx.balance !== undefined ? fmtMoney(tx.balance) : ""}
+            </span>
+          </div>
+        </div>
+        {!tx.isStart && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button onClick={() => onStartEdit(tx)} title={t("common_edit")} className="rounded-md p-1.5 text-slate-400 active:bg-brand-50 active:text-brand-600">
+              <Pencil size={14} />
+            </button>
+            <button onClick={() => onDelete(tx.id)} title={t("common_delete")} className="rounded-md p-1.5 text-slate-400 active:bg-rose-50 active:text-rose-600">
+              <Trash2 size={14} />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -14,8 +14,8 @@ import {
 import { api } from "../api";
 import { useApp } from "../store";
 import { fmtDate, fmtMoney } from "../format";
-import { Btn, Spinner } from "../components/ui";
-import { AmountInput, CategorySelect, PayeeSelect, emptyForm, formAmount, type FormState } from "../components/txEdit";
+import { Btn, Sheet, Spinner, useMediaQuery } from "../components/ui";
+import { AmountInput, CategorySelect, MobileTxForm, PayeeSelect, emptyForm, formAmount, type FormState } from "../components/txEdit";
 import type { Tx } from "../types";
 
 const PAGE_SIZE = 200;
@@ -29,6 +29,7 @@ function hashQuery(): URLSearchParams {
 
 export function TransactionsPage() {
   const { boot, t, lang, refreshBoot, toast } = useApp();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   const [onlyUncat, setOnlyUncat] = useState(() => hashQuery().get("filter") === "uncategorized");
   const [accFilter, setAccFilter] = useState("");
@@ -227,7 +228,7 @@ export function TransactionsPage() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3 px-4 py-4 md:px-6">
-        <div className="relative w-72">
+        <div className="relative w-full sm:w-72">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input className={"pl-8 " + searchCls} placeholder={t("txp_search")} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
           {searchInput && (
@@ -236,8 +237,8 @@ export function TransactionsPage() {
             </button>
           )}
         </div>
-        <div className="relative w-72">
-          <select className={searchCls + " w-auto"} value={accFilter} onChange={(e) => setAccFilter(e.target.value)} aria-label={t("txp_account")}>
+        <div className="relative w-full sm:w-72">
+          <select className={searchCls + " w-full sm:w-auto"} value={accFilter} onChange={(e) => setAccFilter(e.target.value)} aria-label={t("txp_account")}>
             <option value="">{t("txp_allAccounts")}</option>
             {accounts.map((a) => (
               <option key={a.id} value={a.id}>
@@ -284,7 +285,8 @@ export function TransactionsPage() {
         {/* min-w-min（= min-content）让卡片最小宽度由下面 gridCls 的列宽模板自动推导，
             不再写死像素值：窄屏时卡片随内容一起变宽、由外层容器横向滚动，
             否则栅格最小宽度大于卡片时会把最后几列挤到白底之外 */}
-        <div className="min-w-min overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
+        {isDesktop ? (
+        <div data-testid="tx-desktop-table" className="min-w-min overflow-visible rounded-xl border border-slate-200 bg-white shadow-card">
           <div className={`${gridCls} rounded-t-xl border-b border-slate-100 bg-slate-50/80 px-3`}>
             <div className="px-2">
               <input type="checkbox" checked={allPageSelected} onChange={toggleSelectAll} title={t("txp_selectAll")} className="accent-brand-600" />
@@ -398,6 +400,32 @@ export function TransactionsPage() {
             )
           )}
         </div>
+        ) : (
+          <div data-testid="tx-card-list" className="space-y-2">
+            {data.txs.length === 0 && (
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-400 shadow-card">
+                {t("txp_noResults")}
+              </div>
+            )}
+            {data.txs.map((tx) =>
+              editingId === tx.id ? null : (
+                <TxCard
+                  key={tx.id}
+                  tx={tx}
+                  selected={selected.has(tx.id)}
+                  account={accountName(tx)}
+                  onToggleSel={() => toggleSel(tx.id)}
+                  onToggleCleared={async () => {
+                    await api.setTxStatus(tx.id, tx.cleared === 1 ? 0 : 1);
+                    await reload();
+                  }}
+                  onEdit={() => startEdit(tx)}
+                  onDelete={() => deleteTx(tx.id)}
+                />
+              )
+            )}
+          </div>
+        )}
 
         {data.txs.length < data.total && (
           <div className="mt-4 flex items-center justify-center gap-3">
@@ -407,6 +435,111 @@ export function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* 移动端:行内编辑不可用,改为底部抽屉表单 */}
+      {editingId && !isDesktop && (
+        <Sheet onClose={() => setEditingId(null)}>
+          <MobileTxForm form={editForm} setForm={setEditForm} />
+          <div className="flex gap-2 px-4 pb-6">
+            <Btn variant="primary" className="flex-1" onClick={saveEdit}>
+              <Check size={14} /> {t("common_save")}
+            </Btn>
+            <Btn
+              variant="danger"
+              onClick={() => {
+                if (editingId) deleteTx(editingId);
+              }}
+            >
+              <Trash2 size={14} /> {t("common_delete")}
+            </Btn>
+          </div>
+        </Sheet>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------- 移动端卡片 ------------------------- */
+
+function TxCard({
+  tx,
+  selected,
+  account,
+  onToggleSel,
+  onToggleCleared,
+  onEdit,
+  onDelete,
+}: {
+  tx: Tx;
+  selected: boolean;
+  account: string;
+  onToggleSel: () => void;
+  onToggleCleared: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { t, lang } = useApp();
+  return (
+    <div
+      className={`flex items-center gap-2.5 rounded-xl border bg-white px-3 py-2.5 shadow-card ${
+        selected ? "border-brand-300 bg-brand-50/60" : "border-slate-200"
+      }`}
+    >
+      <input type="checkbox" checked={selected} onChange={onToggleSel} className="accent-brand-600" />
+      <button
+        onClick={onToggleCleared}
+        title={tx.reconciled ? "reconciled" : tx.cleared ? "cleared" : "uncleared"}
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+          tx.reconciled ? "bg-emerald-100 text-emerald-600" : tx.cleared ? "text-emerald-500" : "text-slate-200"
+        }`}
+      >
+        {tx.reconciled ? <Lock size={12} /> : tx.cleared ? <Check size={14} strokeWidth={3} /> : <Circle size={14} />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="min-w-0 truncate text-[14px] font-medium text-slate-700">
+            {tx.isStart ? (
+              <span className="italic text-slate-400">{t("tx_starting")}</span>
+            ) : tx.transferAccountId ? (
+              <span className="font-medium text-sky-600">
+                {lang === "zh" ? `转账 ${tx.otherAccountName}` : `Transfer: ${tx.otherAccountName}`}
+              </span>
+            ) : (
+              tx.payeeName || "—"
+            )}
+          </span>
+          <span className={`num shrink-0 text-[14px] font-semibold ${tx.amount < 0 ? "text-rose-500" : "text-emerald-600"}`}>
+            {tx.amount < 0 ? fmtMoney(-tx.amount) : fmtMoney(tx.amount)}
+          </span>
+        </div>
+        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+          <span className="shrink-0">{fmtDate(tx.date, lang)}</span>
+          <span>·</span>
+          <span className="min-w-0 truncate">{account}</span>
+          {tx.categoryName && (
+            <>
+              <span>·</span>
+              <span className="min-w-0 truncate">{tx.categoryName}</span>
+            </>
+          )}
+          {tx.memo && (
+            <>
+              <span>·</span>
+              <span className="min-w-0 truncate">{tx.memo}</span>
+            </>
+          )}
+        </div>
+      </div>
+      {!tx.isStart && (
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button onClick={onEdit} title={t("common_edit")} className="rounded-md p-1.5 text-slate-400 active:bg-brand-50 active:text-brand-600">
+            <Pencil size={14} />
+          </button>
+          <button onClick={onDelete} title={t("common_delete")} className="rounded-md p-1.5 text-slate-400 active:bg-rose-50 active:text-rose-600">
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
