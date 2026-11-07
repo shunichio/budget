@@ -46,14 +46,24 @@ test("Sheet:点遮罩关闭,点面板内容不关闭", () => {
   expect(onClose).toHaveBeenCalledTimes(1);
 });
 
-test("Sheet:无标题时不渲染标题栏,但关闭按钮仍可用", () => {
+test("Sheet:无标题时不渲染标题栏与关闭按钮(由内容自带关闭 affordance),Escape 仍可关闭", () => {
   const onClose = vi.fn();
   render(
     <Sheet onClose={onClose}>
       <button>动作一</button>
     </Sheet>
   );
-  expect(screen.queryByText("餐饮")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "close" }));
+  expect(screen.queryByRole("button", { name: "close" })).toBeNull();
+  fireEvent.keyDown(window, { key: "Escape" });
   expect(onClose).toHaveBeenCalledTimes(1);
+});
+
+test("Sheet:面板具有 dialog 语义,aria-label 取自标题", () => {
+  render(
+    <Sheet title="餐饮" onClose={() => {}}>
+      <div>面板内容</div>
+    </Sheet>
+  );
+  const dlg = screen.getByRole("dialog", { name: "餐饮" });
+  expect(dlg.className).toContain("sheet-panel");
 });

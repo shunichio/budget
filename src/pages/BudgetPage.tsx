@@ -19,7 +19,7 @@ import { api } from "../api";
 import { useApp } from "../store";
 import { fmtMoney, fmtMoneyShort, fmtMonth, fmtMonthShort, parseAmountToCents } from "../format";
 import type { BudCategory, BudGroup, BudgetData } from "../types";
-import { Btn, Field, Modal, Spinner, inputCls } from "../components/ui";
+import { Btn, Field, Modal, Sheet, Spinner, inputCls, useMediaQuery } from "../components/ui";
 
 function useCollapsedGroups() {
   const [collapsed, setCollapsed] = useState<string[]>(() => {
@@ -52,6 +52,7 @@ const MONTH_GRID = "grid grid-cols-[112px_96px_120px] items-center gap-x-2";
 
 export function BudgetPage() {
   const { boot, t, lang, refreshBoot, toast } = useApp();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [base, setBase] = useState<string>("");
   const [win, setWin] = useState<{ months: string[]; data: Record<string, BudgetData> } | null>(null);
   const [sel, setSel] = useState<Selection>(null);
@@ -164,7 +165,7 @@ export function BudgetPage() {
 
   return (
     <div className="flex min-h-full">
-      <div className="flex min-h-full min-w-[1240px] flex-1 flex-col">
+      <div className="flex min-h-full flex-1 flex-col">
         {/* Header */}
         <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
           <div className="flex flex-wrap items-center gap-3 px-4 pb-2 pt-3 md:px-6">
@@ -192,6 +193,17 @@ export function BudgetPage() {
                   {lang === "zh" ? "今" : "Today"}
                 </button>
               )}
+              {/* 移动端没有 MonthHead 的复制入口,在月份切换器旁补一个 */}
+              {!isDesktop && (
+                <button
+                  onClick={() => copyPrev(base)}
+                  disabled={copying || base <= firstMonth}
+                  title={t("budget_copyLast")}
+                  className="ml-1 rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-brand-600 disabled:pointer-events-none disabled:opacity-30"
+                >
+                  <CopyPlus size={14} />
+                </button>
+              )}
             </div>
 
             {/* RTA */}
@@ -208,7 +220,7 @@ export function BudgetPage() {
                 <span className="num text-lg font-bold">{fmtMoney(cur.readyToAssign)}</span>
                 <ChevronDown size={14} className="self-center opacity-70" />
               </button>
-              {sel?.kind === "rta" && (
+              {isDesktop && sel?.kind === "rta" && (
                 <div className="anim-pop absolute left-0 top-full z-30 mt-2 w-72 rounded-xl border border-slate-100 bg-white p-3 shadow-pop">
                   <div className="space-y-1.5 text-[13px]">
                     <div className="flex justify-between text-slate-500">
@@ -258,7 +270,8 @@ export function BudgetPage() {
           </div>
 
           {/* Month timeline */}
-          <div ref={stripRef} className="flex items-center gap-1 overflow-x-auto px-4 pb-1.5 pt-0.5 md:px-6">
+          {/* contain:inline-size:横向滚动的月份条不把自身 min-content(约 20 个月份 chip)传播给祖先,否则移动端整列被撑到 900px+ */}
+          <div ref={stripRef} className="flex items-center gap-1 overflow-x-auto px-4 pb-1.5 pt-0.5 [contain:inline-size] md:px-6">
             {timelineMonths.map((m, i) => {
               const prev = i > 0 ? timelineMonths[i - 1] : "";
               const showYear = !prev || m.slice(0, 4) !== prev.slice(0, 4);
@@ -297,32 +310,36 @@ export function BudgetPage() {
             </a>
           )}
 
-          {/* Column headers */}
-          <div className={`${GRID} px-4 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:px-6`}>
-            <div>{t("nav_budget").toUpperCase()}</div>
-            {monthsWin.map((m) => (
-              <MonthHead
-                key={m}
-                m={m}
-                data={win.data[m]}
-                active={m === base}
-                first={firstMonth}
-                copying={copying}
-                onPick={() => setBase(m)}
-                onCopy={() => copyPrev(m)}
-              />
-            ))}
-          </div>
-          <div className={`${GRID} px-4 pb-2 text-[10px] font-medium uppercase tracking-wide text-slate-300 md:px-6`}>
-            <div />
-            {monthsWin.map((m) => (
-              <div key={m} className={`${MONTH_GRID} col-span-3`}>
-                <div className="text-right">{t("budget_assignCol")}</div>
-                <div className="text-right">{t("budget_activityCol")}</div>
-                <div className="text-right">{t("budget_availableCol")}</div>
+          {/* Column headers(桌面三月网格;移动端为单月列表,无列头) */}
+          {isDesktop && (
+            <>
+              <div className={`${GRID} px-4 pb-1 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 md:px-6`}>
+                <div>{t("nav_budget").toUpperCase()}</div>
+                {monthsWin.map((m) => (
+                  <MonthHead
+                    key={m}
+                    m={m}
+                    data={win.data[m]}
+                    active={m === base}
+                    first={firstMonth}
+                    copying={copying}
+                    onPick={() => setBase(m)}
+                    onCopy={() => copyPrev(m)}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+              <div className={`${GRID} px-4 pb-2 text-[10px] font-medium uppercase tracking-wide text-slate-300 md:px-6`}>
+                <div />
+                {monthsWin.map((m) => (
+                  <div key={m} className={`${MONTH_GRID} col-span-3`}>
+                    <div className="text-right">{t("budget_assignCol")}</div>
+                    <div className="text-right">{t("budget_activityCol")}</div>
+                    <div className="text-right">{t("budget_availableCol")}</div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Table body */}
@@ -341,32 +358,55 @@ export function BudgetPage() {
                 >
                   {sec.label}
                 </div>
-                {sec.groups.map((g) => (
-                  <GroupBlock
-                    key={g.id}
-                    group={g}
-                    income={sec.income}
-                    monthsWin={monthsWin}
-                    catIndex={catIndex}
-                    activeMonth={base}
-                    collapsed={collapsed.includes(g.id)}
-                    onToggle={() => toggle(g.id)}
-                    selection={sel}
-                    onSelect={setSel}
-                    editing={editing}
-                    setEditing={setEditing}
-                    onCommitAssign={commitAssign}
-                    onMenu={(e, id) => {
-                      e.stopPropagation();
-                      setGroupMenu({ id, x: e.clientX, y: e.clientY });
-                      setAddGroupId(id);
-                    }}
-                    onQuickAdd={() => {
-                      setAddOpen("category");
-                      setAddGroupId(g.id);
-                    }}
-                  />
-                ))}
+                {isDesktop
+                  ? sec.groups.map((g) => (
+                      <GroupBlock
+                        key={g.id}
+                        group={g}
+                        income={sec.income}
+                        monthsWin={monthsWin}
+                        catIndex={catIndex}
+                        activeMonth={base}
+                        collapsed={collapsed.includes(g.id)}
+                        onToggle={() => toggle(g.id)}
+                        selection={sel}
+                        onSelect={setSel}
+                        editing={editing}
+                        setEditing={setEditing}
+                        onCommitAssign={commitAssign}
+                        onMenu={(e, id) => {
+                          e.stopPropagation();
+                          setGroupMenu({ id, x: e.clientX, y: e.clientY });
+                          setAddGroupId(id);
+                        }}
+                        onQuickAdd={() => {
+                          setAddOpen("category");
+                          setAddGroupId(g.id);
+                        }}
+                      />
+                    ))
+                  : sec.groups.map((g) => (
+                      <MobileGroupBlock
+                        key={g.id}
+                        group={g}
+                        income={sec.income}
+                        catIndex={catIndex}
+                        activeMonth={base}
+                        collapsed={collapsed.includes(g.id)}
+                        onToggle={() => toggle(g.id)}
+                        selection={sel}
+                        onSelect={setSel}
+                        onMenu={(e, id) => {
+                          e.stopPropagation();
+                          setGroupMenu({ id, x: 0, y: 0 });
+                          setAddGroupId(id);
+                        }}
+                        onQuickAdd={() => {
+                          setAddOpen("category");
+                          setAddGroupId(g.id);
+                        }}
+                      />
+                    ))}
               </div>
             ))}
         </div>
@@ -430,52 +470,64 @@ export function BudgetPage() {
         />
       )}
       {groupMenu?.id !== undefined && groupMenu.id !== "__root__" && (
-        <div
-          className="anim-pop fixed z-50 w-40 rounded-xl border border-slate-100 bg-white py-1 shadow-pop"
-          style={{ left: Math.min(groupMenu.x, window.innerWidth - 170), top: groupMenu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {(() => {
-            const grp = boot.groups.find((g) => g.id === groupMenu.id);
-            if (!grp) return null;
+        (() => {
+          const grp = boot.groups.find((g) => g.id === groupMenu.id);
+          if (!grp) return null;
+          const actions = (
+            <>
+              <button
+                className={isDesktop ? "flex w-full items-center gap-2 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50" : "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-[15px] text-slate-700 active:bg-slate-100"}
+                onClick={() => {
+                  setRenameOpen({ kind: "group", id: grp.id, name: grp.name });
+                  setGroupMenu(null);
+                }}
+              >
+                <Pencil size={isDesktop ? 13 : 16} /> {t("budget_rename")}
+              </button>
+              <button
+                className={isDesktop ? "flex w-full items-center gap-2 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50" : "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-[15px] text-slate-700 active:bg-slate-100"}
+                onClick={() => {
+                  setAddOpen("category");
+                  setGroupMenu(null);
+                }}
+              >
+                <Plus size={isDesktop ? 13 : 16} /> {t("budget_addCategory")}
+              </button>
+              <button
+                className={isDesktop ? "flex w-full items-center gap-2 px-3 py-2 text-[13px] text-rose-600 hover:bg-rose-50" : "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-[15px] text-rose-600 active:bg-rose-50"}
+                onClick={async () => {
+                  setGroupMenu(null);
+                  try {
+                    await api.deleteGroup(grp.id);
+                    await Promise.all([load(base), refreshBoot()]);
+                  } catch {
+                    toast(lang === "zh" ? "分组不为空" : "Group is not empty", "err");
+                  }
+                }}
+              >
+                <Trash2 size={isDesktop ? 13 : 16} /> {t("budget_delete")}
+              </button>
+            </>
+          );
+          if (isDesktop) {
             return (
-              <>
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50"
-                  onClick={() => {
-                    setRenameOpen({ kind: "group", id: grp.id, name: grp.name });
-                    setGroupMenu(null);
-                  }}
-                >
-                  <Pencil size={13} /> {t("budget_rename")}
-                </button>
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-slate-600 hover:bg-slate-50"
-                  onClick={() => {
-                    setAddOpen("category");
-                    setGroupMenu(null);
-                  }}
-                >
-                  <Plus size={13} /> {t("budget_addCategory")}
-                </button>
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2 text-[13px] text-rose-600 hover:bg-rose-50"
-                  onClick={async () => {
-                    setGroupMenu(null);
-                    try {
-                      await api.deleteGroup(grp.id);
-                      await Promise.all([load(base), refreshBoot()]);
-                    } catch {
-                      toast(lang === "zh" ? "分组不为空" : "Group is not empty", "err");
-                    }
-                  }}
-                >
-                  <Trash2 size={13} /> {t("budget_delete")}
-                </button>
-              </>
+              <div
+                className="anim-pop fixed z-50 w-40 rounded-xl border border-slate-100 bg-white py-1 shadow-pop"
+                style={{ left: Math.min(groupMenu.x, window.innerWidth - 170), top: groupMenu.y }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {actions}
+              </div>
             );
-          })()}
-        </div>
+          }
+          return (
+            <Sheet title={grp.name} onClose={() => setGroupMenu(null)}>
+              <div className="space-y-1 p-2 pb-4" onClick={(e) => e.stopPropagation()}>
+                {actions}
+              </div>
+            </Sheet>
+          );
+        })()
       )}
       {renameOpen && (
         <RenameModal
@@ -785,6 +837,7 @@ function Row({
                 <input
                   autoFocus
                   className="cell-input"
+                  inputMode="decimal"
                   value={editingValue ?? ""}
                   onChange={(e) => onChange(e.target.value)}
                   onBlur={() => onCommit(m, editingValue ?? "")}
@@ -817,6 +870,174 @@ function Row({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ------------------------------ 移动端单月列表 ------------------------------ */
+
+function MobileGroupBlock({
+  group,
+  income = false,
+  catIndex,
+  activeMonth,
+  collapsed,
+  onToggle,
+  selection,
+  onSelect,
+  onMenu,
+  onQuickAdd,
+}: {
+  group: BudGroup;
+  income?: boolean;
+  catIndex: Record<string, Map<string, BudCategory>>;
+  activeMonth: string;
+  collapsed: boolean;
+  onToggle: () => void;
+  selection: Selection;
+  onSelect: (s: Selection) => void;
+  onMenu: (e: React.MouseEvent, id: string) => void;
+  onQuickAdd: () => void;
+}) {
+  const { t, lang } = useApp();
+  const cats = group.categories;
+  const groupName = group.virtual ? (lang === "zh" ? "信用卡还款" : "Credit Card Payments") : group.name;
+  const idx = catIndex[activeMonth];
+  const has = !!idx;
+  const tot = cats.reduce(
+    (acc, c) => {
+      const cc = idx?.get(c.id);
+      acc.assigned += cc?.assigned ?? 0;
+      acc.activity += cc?.activity ?? 0;
+      acc.available += cc?.available ?? 0;
+      return acc;
+    },
+    { assigned: 0, activity: 0, available: 0 }
+  );
+  const availableText = has && !income ? fmtMoney(tot.available) : "–";
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-card">
+      <header
+        className={`flex cursor-pointer items-center justify-between gap-2 px-4 py-2.5 transition-colors ${
+          income ? "bg-emerald-50/60 active:bg-emerald-100/60" : "bg-slate-50/80 active:bg-slate-100/80"
+        }`}
+        onClick={onToggle}
+      >
+        <div className="flex min-w-0 items-center gap-1.5 text-[13px] font-bold text-slate-700">
+          <span className={`text-slate-400 transition-transform ${collapsed ? "" : "rotate-90"}`}>›</span>
+          <span className="min-w-0 truncate">{groupName}</span>
+          {!group.virtual && (
+            <button
+              aria-label="group_menu"
+              className="ml-1 shrink-0 rounded p-0.5 text-slate-300 active:bg-slate-200 active:text-slate-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMenu(e, group.id);
+              }}
+            >
+              <MoreHorizontal size={15} />
+            </button>
+          )}
+        </div>
+        <div className="num shrink-0 text-right text-[13px] font-semibold text-slate-500" title={availableText}>
+          {availableText}
+        </div>
+      </header>
+      {!collapsed && (
+        <div className="border-t border-slate-100">
+          {cats.map((c) => {
+            const src = idx?.get(c.id) ?? null;
+            return (
+              <MobileRow
+                key={c.id}
+                name={c.name ?? ""}
+                cat={src}
+                income={income}
+                selected={selection?.kind === "cat" && selection.cat.id === c.id}
+                onSelect={() => {
+                  if (src) onSelect({ kind: "cat", cat: src, groupId: group.id, month: activeMonth });
+                }}
+              />
+            );
+          })}
+          {!group.virtual && (
+            <button
+              onClick={onQuickAdd}
+              className="flex w-full items-center gap-1.5 px-4 py-2.5 text-[13px] text-slate-300 active:bg-slate-50 active:text-brand-600"
+            >
+              <Plus size={13} /> {t("budget_addCategory")}
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MobileRow({
+  name,
+  cat,
+  income = false,
+  selected,
+  onSelect,
+}: {
+  name: string;
+  cat: BudCategory | null;
+  income?: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const { t } = useApp();
+  const availableText = !cat || income ? "–" : fmtMoney(cat.available);
+  const pct = cat && !income ? goalPct(cat) : null;
+  return (
+    <div
+      onClick={onSelect}
+      className={`flex cursor-pointer items-center gap-3 border-b border-slate-50 px-4 py-2.5 last:border-b-0 ${
+        selected ? "bg-brand-50/80" : "active:bg-slate-50"
+      }`}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[14px] font-medium text-slate-700">{name}</div>
+        {cat && (
+          <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
+            {!income && (
+              <>
+                <span>
+                  {t("budget_assignCol")}{" "}
+                  <span className="num" title={fmtMoney(cat.assigned)}>
+                    {cat.assigned === 0 ? "–" : fmtMoney(cat.assigned)}
+                  </span>
+                </span>
+                <span>·</span>
+              </>
+            )}
+            <span>
+              {t("budget_activityCol")}{" "}
+              <span className={`num ${cat.activity > 0 ? "text-emerald-600" : ""}`} title={fmtMoney(cat.activity)}>
+                {fmtMoney(cat.activity)}
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="w-[76px] shrink-0 text-right">
+        <span
+          className={`num block rounded-md px-1 py-0.5 text-[14px] font-semibold ${!cat || income ? "text-slate-300" : availCls(cat)}`}
+          title={availableText}
+        >
+          {availableText}
+        </span>
+        {pct != null && pct > 0 && (
+          <div className="mt-1 h-[3px] overflow-hidden rounded-full bg-slate-100" aria-hidden>
+            <div
+              className="h-full rounded-full"
+              style={{ width: `${pct}%`, background: pct >= 100 ? "#10b981" : "linear-gradient(90deg,#f59e0b,#fbbf24)" }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -873,27 +1094,31 @@ function Inspector({
   }, [cat?.goal]);
   const [gf, setGf] = useState(goalForm);
   useEffect(() => setGf(goalForm), [goalForm]);
+  const mobileView = !useMediaQuery("(min-width: 768px)");
 
-  return (
-    <>
-      <div
-        key={`bd-${cat?.id ?? "rta"}`}
-        aria-hidden="true"
-        onClick={onClose}
-        className="anim-fade fixed inset-0 z-30 bg-navy-950/25 min-[1680px]:hidden"
-      />
-      <aside
-        key={cat?.id ?? "rta"}
-        role="dialog"
-        aria-label={sel.kind === "cat" ? (cat?.name ?? "") : t("inspector_readyToAssign")}
-        className="anim-slide fixed inset-y-0 right-0 z-40 h-full w-[320px] max-w-[85vw] shrink-0 overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-pop min-[1680px]:sticky min-[1680px]:top-0 min-[1680px]:bottom-auto min-[1680px]:z-auto min-[1680px]:max-w-none min-[1680px]:self-start min-[1680px]:h-screen min-[1680px]:shadow-none"
-      >
-        {sel.kind === "rta" ? (
+  const body = sel.kind === "rta" ? (
           <>
             <SectionTitle icon={<Coins size={15} />} title={t("inspector_readyToAssign")} onClose={onClose} />
             <div className={`num mt-3 text-3xl font-bold ${data.readyToAssign < 0 ? "text-rose-600" : "text-brand-600"}`}>
               {fmtMoney(data.readyToAssign)}
             </div>
+            {/* 桌面端这三项在 RTA 按钮旁的下拉里,移动端下拉不渲染,补进抽屉 */}
+            {mobileView && (
+              <div className="mt-3 space-y-1.5 rounded-xl bg-slate-50 p-3 text-[13px]">
+                <div className="flex justify-between text-slate-500">
+                  <span>{t("budget_incomeThisMonth")}</span>
+                  <b className="num text-emerald-600">{fmtMoney(data.incomeThisMonth)}</b>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>{t("budget_assignedTotal")}</span>
+                  <b className="num text-slate-700">{fmtMoney(data.assignedTotal)}</b>
+                </div>
+                <div className="flex justify-between text-slate-500">
+                  <span>{t("rep_aom")}</span>
+                  <b className="num text-slate-700">{data.ageOfMoney}d</b>
+                </div>
+              </div>
+            )}
             <p className="mt-2 text-xs leading-relaxed text-slate-400">
               {lang === "zh"
                 ? "这是尚未分配任何任务的钱。YNAB 第一法则：给每一块钱一个任务，把它分配到下面的分类里。"
@@ -1050,7 +1275,30 @@ function Inspector({
               </div>
             )}
           </>
-        ) : null}
+        ) : null;
+
+  if (mobileView) {
+    return (
+      <Sheet key={cat?.id ?? "rta"} onClose={onClose}>
+        <div className="p-5">{body}</div>
+      </Sheet>
+    );
+  }
+  return (
+    <>
+      <div
+        key={`bd-${cat?.id ?? "rta"}`}
+        aria-hidden="true"
+        onClick={onClose}
+        className="anim-fade fixed inset-0 z-30 bg-navy-950/25 min-[1680px]:hidden"
+      />
+      <aside
+        key={cat?.id ?? "rta"}
+        role="dialog"
+        aria-label={sel.kind === "cat" ? (cat?.name ?? "") : t("inspector_readyToAssign")}
+        className="anim-slide fixed inset-y-0 right-0 z-40 h-full w-[320px] max-w-[85vw] shrink-0 overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-pop min-[1680px]:sticky min-[1680px]:top-0 min-[1680px]:bottom-auto min-[1680px]:z-auto min-[1680px]:max-w-none min-[1680px]:self-start min-[1680px]:h-screen min-[1680px]:shadow-none"
+      >
+        {body}
       </aside>
     </>
   );

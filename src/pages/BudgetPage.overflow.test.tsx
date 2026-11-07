@@ -1,7 +1,25 @@
 // @vitest-environment jsdom
 // 大额金额超出固定列宽时：单元格用省略号截断，title 保留完整金额供悬停查看。
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+
+// 桌面行为路径:BudgetPage 依赖 matchMedia 区分移动/桌面,jsdom 未实现,这里 stub 成桌面
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (q: string) => ({
+      matches: true,
+      media: q,
+      onchange: null,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent: () => false,
+    }),
+  });
+});
 
 const h = vi.hoisted(() => {
   const budgetData = (month: string) => ({

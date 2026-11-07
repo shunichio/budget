@@ -93,7 +93,21 @@ async function openInspector() {
 
 describe("BudgetPage Inspector responsive layout", () => {
   beforeAll(() => {
+    // 桌面行为路径:BudgetPage 依赖 matchMedia 区分移动/桌面,jsdom 未实现,这里 stub 成桌面
     Element.prototype.scrollIntoView = vi.fn();
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: (q: string) => ({
+        matches: true,
+        media: q,
+        onchange: null,
+        addListener() {},
+        removeListener() {},
+        addEventListener() {},
+        removeEventListener() {},
+        dispatchEvent: () => false,
+      }),
+    });
   });
   afterEach(cleanup);
   beforeEach(() => {

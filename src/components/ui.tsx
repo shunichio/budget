@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 
@@ -38,8 +38,8 @@ export function Modal({
 }
 
 /**
- * 移动端底部抽屉(消费方在桌面布局需要时自行包 md:hidden)。
- * 与 Modal 不同:贴底滑入、顶部圆角、带安全区内边距,适配触屏单手操作。
+ * 移动端底部抽屉。与 Modal 不同:贴底滑入、顶部圆角、带安全区内边距,适配触屏单手操作。
+ * title 提供时渲染标题栏与关闭按钮;不提供时由内容自带关闭 affordance(如 Inspector 的 SectionTitle)。
  */
 export function Sheet({
   title,
@@ -61,23 +61,43 @@ export function Sheet({
   return (
     <div className="anim-fade fixed inset-0 z-50 bg-navy-950/45 backdrop-blur-[2px]" onMouseDown={onClose}>
       <div
+        role="dialog"
+        aria-label={title}
         className={`sheet-panel fixed inset-x-0 bottom-0 max-h-[88vh] overflow-y-auto rounded-t-2xl bg-white pb-[env(safe-area-inset-bottom)] shadow-pop ${className}`}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between gap-2 rounded-t-2xl border-b border-slate-100 bg-white px-5 py-3">
-          <span className="min-w-0 truncate text-[15px] font-semibold text-slate-900">{title ?? ""}</span>
-          <button
-            onClick={onClose}
-            aria-label="close"
-            className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          >
-            <X size={17} />
-          </button>
-        </div>
+        {title !== undefined && (
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-2 rounded-t-2xl border-b border-slate-100 bg-white px-5 py-3">
+            <span className="min-w-0 truncate text-[15px] font-semibold text-slate-900">{title}</span>
+            <button
+              onClick={onClose}
+              aria-label="close"
+              className="shrink-0 rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            >
+              <X size={17} />
+            </button>
+          </div>
+        )}
         {children}
       </div>
     </div>
   );
+}
+
+/** 响应式渲染开关:jsdom 未实现 matchMedia 时视为移动端(false),桌面行为由测试显式 stub。 */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function" ? window.matchMedia(query).matches : false
+  );
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia(query);
+    const h = () => setMatches(mq.matches);
+    h();
+    mq.addEventListener("change", h);
+    return () => mq.removeEventListener("change", h);
+  }, [query]);
+  return matches;
 }
 
 export function Btn({
