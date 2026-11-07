@@ -8,6 +8,7 @@ import {
   FilePenLine,
   ImagePlus,
   Loader2,
+  MessageSquare,
   Pencil,
   Plus,
   Send,
@@ -20,7 +21,7 @@ import {
 import { api } from "../api";
 import { useApp } from "../store";
 import type { ChatMsg, ChatSession } from "../types";
-import { Btn, Spinner } from "../components/ui";
+import { Btn, Sheet, Spinner, useMediaQuery } from "../components/ui";
 import { Mermaid } from "../components/Mermaid";
 
 type TFn = ReturnType<typeof useApp>["t"];
@@ -112,6 +113,7 @@ function buildUnits(messages: ChatMsg[]): Unit[] {
 
 export function ChatPage() {
   const { boot, t, toast, refreshBoot } = useApp();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -120,6 +122,7 @@ export function ChatPage() {
   const [confirming, setConfirming] = useState(false);
   const [loadingSession, setLoadingSession] = useState(false);
   const [pendingImages, setPendingImages] = useState<string[]>([]);
+  const [sessionsOpen, setSessionsOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -293,8 +296,9 @@ export function ChatPage() {
 
   return (
     <div className="flex h-full">
-      {/* sessions */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white md:flex">
+      {/* sessions:桌面为常驻侧栏,移动端改为顶部按钮 + 底部抽屉 */}
+      {isDesktop && (
+      <aside className="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
         <div className="p-3">
           <Btn variant="primary" className="w-full" onClick={newSession}>
             <Plus size={14} /> {t("chat_new")}
@@ -316,6 +320,7 @@ export function ChatPage() {
           )}
         </div>
       </aside>
+      )}
 
       {/* thread */}
       <section className="flex min-w-0 flex-1 flex-col">
@@ -326,7 +331,12 @@ export function ChatPage() {
             className={`ml-1 h-2 w-2 rounded-full ${configured ? "bg-emerald-400" : "bg-slate-300"}`}
             title={configured ? "OK" : t("chat_notConfigured")}
           />
-          <Btn variant="ghost" className="ml-auto" onClick={openSettings}>
+          {!isDesktop && (
+            <Btn variant="ghost" className="ml-auto" onClick={() => setSessionsOpen(true)} title={t("chat_sessions")}>
+              <MessageSquare size={15} />
+            </Btn>
+          )}
+          <Btn variant="ghost" className={isDesktop ? "ml-auto" : ""} onClick={openSettings}>
             <Settings2 size={14} /> {t("nav_settings")}
           </Btn>
         </header>
@@ -477,6 +487,43 @@ export function ChatPage() {
           </div>
         </div>
       </section>
+
+      {/* 移动端会话抽屉 */}
+      {sessionsOpen && !isDesktop && (
+        <Sheet title={t("chat_sessions")} onClose={() => setSessionsOpen(false)}>
+          <div className="p-3 pb-6">
+            <Btn
+              variant="primary"
+              className="mb-3 w-full"
+              onClick={() => {
+                setSessionsOpen(false);
+                newSession();
+              }}
+            >
+              <Plus size={14} /> {t("chat_new")}
+            </Btn>
+            <div className="space-y-0.5">
+              {sessions.map((s) => (
+                <SessionItem
+                  key={s.id}
+                  session={s}
+                  active={s.id === activeId}
+                  alwaysShowActions
+                  onOpen={() => {
+                    setSessionsOpen(false);
+                    openSession(s.id);
+                  }}
+                  onDelete={() => removeSession(s.id)}
+                  onRename={(title) => renameSessionLocal(s.id, title)}
+                />
+              ))}
+              {sessions.length === 0 && (
+                <p className="px-3 py-6 text-center text-xs leading-relaxed text-slate-300">{t("chat_emptyDesc")}</p>
+              )}
+            </div>
+          </div>
+        </Sheet>
+      )}
     </div>
   );
 }
@@ -489,14 +536,16 @@ function SessionItem({
   onOpen,
   onDelete,
   onRename,
+  alwaysShowActions = false,
 }: {
   session: ChatSession;
   active: boolean;
   onOpen: () => void;
   onDelete: () => void;
   onRename: (title: string) => void;
+  alwaysShowActions?: boolean;
 }) {
-  const { lang } = useApp();
+  const { t, lang } = useApp();
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(session.title);
 
@@ -528,8 +577,9 @@ function SessionItem({
             </div>
             <div className="truncate text-[11px] text-slate-300">{fmtRel(session.updatedAt, lang)}</div>
           </div>
-          <div className="flex shrink-0 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className={`flex shrink-0 transition-opacity ${alwaysShowActions ? "" : "opacity-0 group-hover:opacity-100"}`}>
             <button
+              aria-label={t("common_edit")}
               className="rounded p-1 text-slate-300 hover:bg-slate-200 hover:text-slate-600"
               onClick={(e) => {
                 e.stopPropagation();
@@ -540,6 +590,7 @@ function SessionItem({
               <Pencil size={11} />
             </button>
             <button
+              aria-label={t("common_delete")}
               className="rounded p-1 text-slate-300 hover:bg-rose-50 hover:text-rose-500"
               onClick={(e) => {
                 e.stopPropagation();

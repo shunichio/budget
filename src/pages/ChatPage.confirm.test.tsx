@@ -1,6 +1,23 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from "vitest";
 import { cleanup, render, screen, fireEvent, waitFor } from "@testing-library/react";
+
+// 桌面行为路径:ChatPage 依赖 matchMedia 区分移动/桌面(会话侧栏 vs 抽屉),jsdom 未实现,stub 成桌面
+beforeAll(() => {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: (q: string) => ({
+      matches: true,
+      media: q,
+      onchange: null,
+      addListener() {},
+      removeListener() {},
+      addEventListener() {},
+      removeEventListener() {},
+      dispatchEvent: () => false,
+    }),
+  });
+});
 
 const h = vi.hoisted(() => ({
   confirmChat: vi.fn(),

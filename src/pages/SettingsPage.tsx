@@ -237,7 +237,7 @@ export function SettingsPage() {
           </div>
           <div>
             <span className="mb-1 block text-xs font-medium text-slate-500">{t("settings_timezone")}</span>
-            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={`${inputCls} ${controlH} min-w-[220px]`}>
+            <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className={`${inputCls} ${controlH} w-full sm:min-w-[220px] sm:w-auto`}>
               {!tzOptions.includes(timezone) && <option value={timezone}>{timezone}</option>}
               {tzOptions.map((tz) => (
                 <option key={tz} value={tz}>

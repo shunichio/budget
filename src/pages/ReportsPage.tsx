@@ -133,7 +133,7 @@ export function ReportsPage() {
           {pie.length === 0 ? (
             <EmptyChart />
           ) : (
-            <div className="flex items-center">
+            <div className="flex flex-col items-center sm:flex-row">
               <ResponsiveContainer width="55%" height={250}>
                 <PieChart>
                   <Pie data={pie} dataKey="value" nameKey="name" innerRadius={58} outerRadius={88} paddingAngle={2} strokeWidth={0}>

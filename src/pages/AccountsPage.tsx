@@ -121,7 +121,7 @@ export function AccountsPage() {
           <Field label={t("account_name")}>
             <input autoFocus className={inputCls} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={t("account_type")}>
               <select className={inputCls} value={type} onChange={(e) => setType(e.target.value)}>
                 {Object.entries(ACCOUNT_TYPE_LABELS).map(([k, v]) => (

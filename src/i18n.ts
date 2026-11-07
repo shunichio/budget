@@ -168,6 +168,7 @@ const zh = {
   nav_chat: "智能助手",
   nav_settings: "系统设置",
   chat_new: "新会话",
+  chat_sessions: "会话列表",
   chat_emptyTitle: "你的智能财务助手",
   chat_emptyDesc: "可以查询、分析、修改账本数据。涉及资金变动的操作默认会征求确认，可在“系统设置”中关闭为直接执行。",
   chat_example1: "分析一下我本月的支出结构",
@@ -429,6 +430,7 @@ const en: typeof zh = {
   nav_chat: "AI Assistant",
   nav_settings: "Settings",
   chat_new: "New chat",
+  chat_sessions: "Chats",
   chat_emptyTitle: "Your AI finance assistant",
   chat_emptyDesc:
     "Query, analyze and update your ledger through natural language. Data-changing actions ask for confirmation by default — you can turn this off in Settings for instant execution.",
