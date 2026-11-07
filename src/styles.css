@@ -97,12 +97,13 @@ body {
 .sheet-panel {
   animation: slide-up 0.2s ease-out;
 }
-/* iOS:聚焦字号 <16px 会触发页面自动缩放,Sheet 内输入控件统一提到 16px */
+/* iOS:移动端聚焦字号 <16px 会触发页面自动缩放,所有文本输入控件统一提到 16px
+   (:where() 保持零特异性,不影响桌面;cell-input 等仅桌面渲染的控件不受影响) */
 @media (max-width: 767.98px) {
-  .sheet-panel input:not([type="checkbox"]):not([type="radio"]),
-  .sheet-panel select,
-  .sheet-panel textarea {
-    font-size: 16px;
+  :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"])),
+  :where(select),
+  :where(textarea) {
+    font-size: 16px !important;
   }
 }
 .anim-pop {
